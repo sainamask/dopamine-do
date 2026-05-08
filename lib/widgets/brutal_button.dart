@@ -10,7 +10,7 @@ class BrutalButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
-    this.color = AppColors.neonYellow,
+    this.color = AppColors.cyan,
     this.borderColor = AppColors.ink,
     this.textStyle,
     this.padding = const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
@@ -38,14 +38,14 @@ class _BrutalButtonState extends State<BrutalButton>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 90),
-    reverseDuration: const Duration(milliseconds: 380),
+    reverseDuration: const Duration(milliseconds: 220),
   );
 
-  late final Animation<double> _scale = Tween<double>(begin: 1, end: 0.9)
-      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut, reverseCurve: Curves.elasticOut));
+  late final Animation<double> _scale = Tween<double>(begin: 1, end: 0.96)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
   late final Animation<double> _shadow = Tween<double>(begin: 1, end: 0)
-      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut, reverseCurve: Curves.elasticOut));
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
   @override
   void dispose() {
@@ -84,7 +84,6 @@ class _BrutalButtonState extends State<BrutalButton>
               scale: _scale.value,
               alignment: Alignment.center,
               child: Container(
-                padding: widget.padding,
                 decoration: BoxDecoration(
                   color: widget.color,
                   border: AppShadows.solid(
@@ -96,16 +95,38 @@ class _BrutalButtonState extends State<BrutalButton>
                     color: widget.borderColor,
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Stack(
                   children: <Widget>[
-                    if (widget.icon != null) ...<Widget>[
-                      Icon(widget.icon, color: widget.borderColor, size: 24),
-                      const SizedBox(width: 10),
-                    ],
-                    Text(
-                      widget.label.toUpperCase(),
-                      style: widget.textStyle ?? AppText.button,
+                    // Top highlight strip — reads as a beveled edge so the
+                    // button doesn't look completely flat.
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 6,
+                        color: Colors.white.withValues(alpha: 0.32),
+                      ),
+                    ),
+                    Padding(
+                      padding: widget.padding,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: <Widget>[
+                          if (widget.icon != null) ...<Widget>[
+                            Icon(widget.icon, color: widget.borderColor, size: 22),
+                            const SizedBox(width: 10),
+                          ],
+                          Flexible(
+                            child: Text(
+                              widget.label.toUpperCase(),
+                              textAlign: TextAlign.center,
+                              style: widget.textStyle ?? AppText.button,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

@@ -8,12 +8,15 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_text.dart';
 import '../../widgets/killed_it_badge.dart';
 
+// Cool-first rotation: cyan + lavender + magenta lead, yellow last so it's
+// rare not dominant.
 const List<Color> _kPalette = <Color>[
-  AppColors.neonYellow,
   AppColors.cyan,
   AppColors.limeShock,
   AppColors.electricPink,
+  AppColors.toxicLime,
   AppColors.safetyOrange,
+  AppColors.neonYellow,
 ];
 
 class GloryGalleryScreen extends ConsumerWidget {
@@ -76,17 +79,22 @@ class _ScoreStrip extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          Text(
-            'SCORE',
-            style: AppText.micro.copyWith(color: AppColors.neonYellow),
-          ),
+          Text('SCORE', style: AppText.micro.copyWith(color: AppColors.white)),
           const Spacer(),
-          Text(
-            count.toString().padLeft(4, '0'),
-            style: AppText.hero.copyWith(
-              color: AppColors.neonYellow,
-              fontSize: 32,
-            ),
+          // Count-up animation when score changes — small dopamine hit.
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0, end: count.toDouble()),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            builder: (BuildContext _, double v, _) {
+              return Text(
+                v.round().toString().padLeft(4, '0'),
+                style: AppText.hero.copyWith(
+                  color: AppColors.white,
+                  fontSize: 32,
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -121,15 +129,21 @@ class _EmptyGlory extends StatelessWidget {
 }
 
 class _GloryCard extends StatelessWidget {
-  const _GloryCard({required this.task, required this.color, required this.rank});
+  const _GloryCard({
+    required this.task,
+    required this.color,
+    required this.rank,
+  });
   final Task task;
   final Color color;
   final int rank;
 
   String _stamp(DateTime dt) {
-    final String d = '${dt.month.toString().padLeft(2, '0')}/'
+    final String d =
+        '${dt.month.toString().padLeft(2, '0')}/'
         '${dt.day.toString().padLeft(2, '0')}';
-    final String t = '${dt.hour.toString().padLeft(2, '0')}:'
+    final String t =
+        '${dt.hour.toString().padLeft(2, '0')}:'
         '${dt.minute.toString().padLeft(2, '0')}';
     return '$d · $t';
   }
@@ -156,7 +170,7 @@ class _GloryCard extends StatelessWidget {
             child: Text(
               '#${rank.toString().padLeft(2, '0')}',
               style: AppText.title.copyWith(
-                color: AppColors.neonYellow,
+                color: AppColors.white,
                 fontSize: 16,
               ),
             ),
@@ -167,7 +181,7 @@ class _GloryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  task.title.toUpperCase(),
+                  task.title,
                   style: AppText.hero.copyWith(fontSize: 22),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

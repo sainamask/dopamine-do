@@ -15,7 +15,7 @@ class AbstractTimerWidget extends StatefulWidget {
     required this.label,
     this.stressLevel = 0,
     this.fillColor = AppColors.electricPink,
-    this.backColor = AppColors.neonYellow,
+    this.backColor = AppColors.cyan,
   });
 
   /// 1.0 = full tank, 0.0 = empty.

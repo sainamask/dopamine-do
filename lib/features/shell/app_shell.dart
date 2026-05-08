@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../state/tasks_provider.dart';
 import '../../theme/app_colors.dart';
@@ -33,9 +35,24 @@ class _BrutalNavBar extends ConsumerWidget {
   const _BrutalNavBar();
 
   static const List<_TabSpec> _tabs = <_TabSpec>[
-    _TabSpec(ShellTab.hype, 'HYPE', Icons.flash_on, AppColors.neonYellow),
-    _TabSpec(ShellTab.action, 'ACTION', Icons.bolt, AppColors.electricPink),
-    _TabSpec(ShellTab.glory, 'GLORY', Icons.emoji_events, AppColors.cyan),
+    _TabSpec(
+      ShellTab.hype,
+      'HYPE',
+      PhosphorIconsBold.fire,
+      AppColors.limeShock,
+    ),
+    _TabSpec(
+      ShellTab.action,
+      'ACTION',
+      PhosphorIconsBold.lightning,
+      AppColors.electricPink,
+    ),
+    _TabSpec(
+      ShellTab.glory,
+      'GLORY',
+      PhosphorIconsBold.trophy,
+      AppColors.toxicLime,
+    ),
   ];
 
   @override
@@ -59,8 +76,11 @@ class _BrutalNavBar extends ConsumerWidget {
                   child: _NavTab(
                     spec: t,
                     selected: current == t.tab,
-                    onTap: () =>
-                        ref.read(shellTabProvider.notifier).set(t.tab),
+                    onTap: () {
+                      if (current == t.tab) return;
+                      HapticFeedback.selectionClick();
+                      ref.read(shellTabProvider.notifier).set(t.tab);
+                    },
                   ),
                 ),
             ],
@@ -102,8 +122,7 @@ class _NavTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: selected ? spec.color : AppColors.white,
             border: AppShadows.solid(width: AppShadows.borderRegular),
-            boxShadow:
-                selected ? <BoxShadow>[] : AppShadows.hard(offset: 4),
+            boxShadow: selected ? <BoxShadow>[] : AppShadows.hard(offset: 4),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

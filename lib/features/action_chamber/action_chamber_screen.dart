@@ -3,14 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../models/task.dart';
+import '../../services/timer_music.dart';
 import '../../state/tasks_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text.dart';
 import '../../widgets/brutal_button.dart';
-import '../../widgets/lottie_placeholder.dart';
+import '../../widgets/icon_hero.dart';
 import '../timer/abstract_timer_widget.dart';
 
 class ActionChamberScreen extends ConsumerWidget {
@@ -45,12 +47,12 @@ class _IdleChamber extends StatelessWidget {
               const SizedBox(height: 4),
               Text('STAGED FOR DAMAGE.', style: AppText.micro),
               const Spacer(),
-              const Center(
-                child: LottiePlaceholder(
-                  assetPath: 'assets/lottie/loop_shapes.json',
-                  fallbackLabel: 'LOOPING SHAPES',
-                  height: 200,
-                  fallbackColor: AppColors.cyan,
+              Center(
+                child: IconHero(
+                  icon: PhosphorIconsBold.gameController,
+                  background: AppColors.electricPink,
+                  size: 180,
+                  animation: HeroAnim.pulse,
                 ),
               ),
               const SizedBox(height: 24),
@@ -97,6 +99,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
   Timer? _ticker;
   int _lastSecondTicked = -1;
   bool _completed = false;
+  bool _paused = false;
 
   @override
   void initState() {
@@ -120,16 +123,34 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
     _startedAt = DateTime.now();
     _lastSecondTicked = -1;
     _completed = false;
+    _paused = false;
     _ticker = Timer.periodic(const Duration(milliseconds: 50), _onTick);
+    unawaited(TimerMusic.instance.play());
+  }
+
+  void _togglePause() {
+    HapticFeedback.lightImpact();
+    if (_paused) {
+      // Resume: re-anchor _startedAt so elapsed math keeps _remainingMs.
+      _startedAt = DateTime.now()
+          .subtract(Duration(milliseconds: _totalMs - _remainingMs));
+      setState(() => _paused = false);
+      unawaited(TimerMusic.instance.play());
+    } else {
+      setState(() => _paused = true);
+      unawaited(TimerMusic.instance.pause());
+    }
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    unawaited(TimerMusic.instance.stop());
     super.dispose();
   }
 
   void _onTick(Timer _) {
+    if (_paused) return;
     final int elapsed = DateTime.now().difference(_startedAt).inMilliseconds;
     final int remaining = (_totalMs - elapsed).clamp(0, _totalMs);
     final int second = (remaining / 1000).ceil();
@@ -153,6 +174,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
 
   Future<void> _onComplete() async {
     HapticFeedback.heavyImpact();
+    unawaited(TimerMusic.instance.stop());
     await ref
         .read(tasksProvider.notifier)
         .markCompleted(widget.task.id, at: DateTime.now());
@@ -186,26 +208,26 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  const Center(
-                    child: LottiePlaceholder(
-                      assetPath: 'assets/lottie/confetti.json',
-                      fallbackLabel: 'CONFETTI',
-                      height: 140,
-                      fallbackColor: AppColors.neonYellow,
+                  Center(
+                    child: IconHero(
+                      icon: PhosphorIconsBold.confetti,
+                      background: AppColors.electricPink,
+                      size: 140,
+                      animation: HeroAnim.wobble,
                     ),
                   ),
                   const SizedBox(height: 14),
                   Text('TASK KILLED', style: AppText.hero, textAlign: TextAlign.center),
                   const SizedBox(height: 4),
                   Text(
-                    widget.task.title.toUpperCase(),
+                    widget.task.title,
                     style: AppText.title,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 18),
                   BrutalButton(
                     label: 'STACK THE WIN',
-                    color: AppColors.neonYellow,
+                    color: AppColors.toxicLime,
                     onPressed: () => Navigator.of(ctx).pop(),
                   ),
                 ],
@@ -219,6 +241,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
 
   void _bail() {
     _ticker?.cancel();
+    unawaited(TimerMusic.instance.stop());
     ref.read(activeTaskIdProvider.notifier).clear();
     ref.read(activeRunDurationProvider.notifier).set(null);
     ref.read(shellTabProvider.notifier).set(ShellTab.hype);
@@ -250,7 +273,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.cyan,
+                  color: AppColors.limeShock,
                   border: AppShadows.solid(width: AppShadows.borderThick),
                   boxShadow: AppShadows.hard(offset: 6),
                 ),
@@ -260,7 +283,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                     Text('NOW DOING', style: AppText.micro),
                     const SizedBox(height: 4),
                     Text(
-                      widget.task.title.toUpperCase(),
+                      widget.task.title,
                       style: AppText.hero.copyWith(fontSize: 26),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -269,13 +292,12 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                 ),
               ),
               const SizedBox(height: 14),
-              SizedBox(
-                height: 110,
-                child: LottiePlaceholder(
-                  assetPath: 'assets/lottie/loop_shapes.json',
-                  fallbackLabel: 'LOOPING SHAPES',
-                  height: 110,
-                  fallbackColor: AppColors.electricPink,
+              Center(
+                child: IconHero(
+                  icon: PhosphorIconsBold.lightning,
+                  background: AppColors.electricPink,
+                  size: 90,
+                  animation: HeroAnim.wobble,
                 ),
               ),
               const SizedBox(height: 14),
@@ -287,18 +309,34 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                     stressLevel: stress,
                     label: _formatTime(_remainingMs),
                     fillColor: AppColors.electricPink,
-                    backColor: AppColors.neonYellow,
+                    backColor: AppColors.limeShock,
                   ),
                 ),
               ),
               const SizedBox(height: 18),
-              Align(
-                alignment: Alignment.centerRight,
-                child: BrutalButton(
-                  label: 'BAIL',
-                  color: AppColors.white,
-                  onPressed: _bail,
-                ),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: BrutalButton(
+                      label: _paused ? 'RESUME' : 'PAUSE',
+                      color: _paused
+                          ? AppColors.toxicLime
+                          : AppColors.safetyOrange,
+                      icon: _paused
+                          ? PhosphorIconsBold.play
+                          : PhosphorIconsBold.pause,
+                      onPressed: _togglePause,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: BrutalButton(
+                      label: 'BAIL',
+                      color: AppColors.white,
+                      onPressed: _bail,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

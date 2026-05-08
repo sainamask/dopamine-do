@@ -1,33 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../models/task.dart';
 import '../../state/tasks_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text.dart';
+import '../../widgets/brutal_button.dart';
+import '../quick_countdown/quick_countdown_sheet.dart';
 import '../takeover/takeover_screen.dart';
 import 'add_task_sheet.dart';
 import 'task_card.dart';
 
+// Cool-first rotation. Cyan / lavender / magenta lead the queue;
+// yellow is last so it stays an accent.
 const List<Color> _cardPalette = <Color>[
-  AppColors.neonYellow,
   AppColors.cyan,
-  AppColors.electricPink,
   AppColors.limeShock,
+  AppColors.electricPink,
+  AppColors.toxicLime,
   AppColors.safetyOrange,
+  AppColors.neonYellow,
 ];
 
 class HypeDeskScreen extends ConsumerWidget {
   const HypeDeskScreen({super.key});
 
   Future<void> _addTask(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.selectionClick();
     final Task? task = await AddTaskSheet.show(context);
     if (task == null) return;
     await ref.read(tasksProvider.notifier).add(task);
   }
 
-  Future<void> _startTask(BuildContext context, WidgetRef ref, Task task) async {
+  Future<void> _quickNudge(BuildContext context) async {
+    HapticFeedback.selectionClick();
+    await QuickCountdownSheet.show(context);
+  }
+
+  /// Routes a tap on a TaskCard through the Play / Switch / Conflict logic.
+  Future<void> _onTaskTap(
+    BuildContext context,
+    WidgetRef ref,
+    Task task,
+  ) async {
+    HapticFeedback.selectionClick();
+    final String? activeId = ref.read(activeTaskIdProvider);
+
+    // Already running THIS task → bypass takeover, jump to action.
+    if (activeId == task.id) {
+      ref.read(shellTabProvider.notifier).set(ShellTab.action);
+      return;
+    }
+
+    // A DIFFERENT task is running → conflict.
+    if (activeId != null) {
+      final _ConflictChoice? c = await _showConflictAlert(context, ref);
+      if (c == null || c == _ConflictChoice.cancel) return;
+      _bailActive(ref);
+      if (!context.mounted) return;
+    }
+
+    await _startTaskFlow(context, ref, task);
+  }
+
+  Future<void> _startTaskFlow(
+    BuildContext context,
+    WidgetRef ref,
+    Task task,
+  ) async {
     final TimeOfDay t = TimeOfDay.fromDateTime(task.scheduledAt);
     final TakeoverChoice? choice = await TakeoverScreen.show(
       context,
@@ -36,18 +79,77 @@ class HypeDeskScreen extends ConsumerWidget {
     );
     if (choice == null || choice == TakeoverChoice.snooze) return;
 
-    final Duration runFor = choice == TakeoverChoice.justFiveMinutes
-        ? const Duration(minutes: 5)
-        : task.duration;
-
     ref.read(activeTaskIdProvider.notifier).set(task.id);
-    ref.read(activeRunDurationProvider.notifier).set(runFor);
+    ref.read(activeRunDurationProvider.notifier).set(task.duration);
     ref.read(shellTabProvider.notifier).set(ShellTab.action);
+  }
+
+  void _bailActive(WidgetRef ref) {
+    ref.read(activeTaskIdProvider.notifier).clear();
+    ref.read(activeRunDurationProvider.notifier).set(null);
+  }
+
+  Future<_ConflictChoice?> _showConflictAlert(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    return showDialog<_ConflictChoice>(
+      context: context,
+      barrierColor: AppColors.ink.withValues(alpha: 0.55),
+      builder: (BuildContext ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.electricPink,
+              border: AppShadows.solid(width: AppShadows.borderThick),
+              boxShadow: AppShadows.hard(offset: 8),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    const Icon(
+                      PhosphorIconsBold.warning,
+                      color: AppColors.ink,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('HOLD UP', style: AppText.hero.copyWith(fontSize: 28)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text('Finish your current mission first.', style: AppText.body),
+                const SizedBox(height: 18),
+                BrutalButton(
+                  label: 'BAIL CURRENT, START THIS',
+                  color: AppColors.toxicLime,
+                  onPressed: () =>
+                      Navigator.of(ctx).pop(_ConflictChoice.bailCurrent),
+                ),
+                const SizedBox(height: 10),
+                BrutalButton(
+                  label: 'NEVER MIND',
+                  color: AppColors.white,
+                  onPressed: () =>
+                      Navigator.of(ctx).pop(_ConflictChoice.cancel),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final List<Task> upcoming = ref.watch(upcomingTasksProvider);
+    final String? activeId = ref.watch(activeTaskIdProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -58,8 +160,10 @@ class HypeDeskScreen extends ConsumerWidget {
             children: <Widget>[
               Text('THE HYPE DESK', style: AppText.hero),
               const SizedBox(height: 4),
-              Text('LOAD THE QUEUE. LET\'S GO.', style: AppText.micro),
-              const SizedBox(height: 18),
+              Text("LOAD THE QUEUE. LET'S GO.", style: AppText.micro),
+              const SizedBox(height: 14),
+              _QuickNudgeStrip(onTap: () => _quickNudge(context)),
+              const SizedBox(height: 14),
               Expanded(
                 child: upcoming.isEmpty
                     ? const _EmptyState()
@@ -70,12 +174,29 @@ class HypeDeskScreen extends ConsumerWidget {
                             const SizedBox(height: 14),
                         itemBuilder: (BuildContext _, int i) {
                           final Task t = upcoming[i];
-                          return TaskCard(
-                            task: t,
-                            color: _cardPalette[i % _cardPalette.length],
-                            onTap: () => _startTask(context, ref, t),
-                            onLongPress: () =>
-                                ref.read(tasksProvider.notifier).remove(t.id),
+                          return Dismissible(
+                            key: ValueKey<String>('task-${t.id}'),
+                            direction: DismissDirection.endToStart,
+                            background: const _DeleteSwipeBackground(),
+                            onDismissed: (_) {
+                              HapticFeedback.mediumImpact();
+                              // If the swiped task is the active one, clear
+                              // the active state so the Action Chamber doesn't
+                              // hold a stale id.
+                              if (ref.read(activeTaskIdProvider) == t.id) {
+                                ref.read(activeTaskIdProvider.notifier).clear();
+                                ref
+                                    .read(activeRunDurationProvider.notifier)
+                                    .set(null);
+                              }
+                              ref.read(tasksProvider.notifier).remove(t.id);
+                            },
+                            child: TaskCard(
+                              task: t,
+                              color: _cardPalette[i % _cardPalette.length],
+                              isActive: activeId == t.id,
+                              onTap: () => _onTaskTap(context, ref, t),
+                            ),
                           );
                         },
                       ),
@@ -85,6 +206,86 @@ class HypeDeskScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: _BrutalFab(onPressed: () => _addTask(context, ref)),
+    );
+  }
+}
+
+enum _ConflictChoice { bailCurrent, cancel }
+
+/// Shown behind a TaskCard when the user swipes left to delete it.
+/// Orange = "warm warning" without leaving the cool palette entirely.
+class _DeleteSwipeBackground extends StatelessWidget {
+  const _DeleteSwipeBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 22),
+      decoration: BoxDecoration(
+        color: AppColors.safetyOrange,
+        border: AppShadows.solid(width: AppShadows.borderThick),
+        boxShadow: AppShadows.hard(offset: 6),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Text('DELETE', style: AppText.button),
+          const SizedBox(width: 10),
+          const Icon(PhosphorIconsBold.trash, color: AppColors.ink, size: 28),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickNudgeStrip extends StatelessWidget {
+  const _QuickNudgeStrip({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          border: AppShadows.solid(width: AppShadows.borderThick),
+          boxShadow: AppShadows.hard(offset: 6),
+        ),
+        child: Row(
+          children: <Widget>[
+            const Icon(
+              PhosphorIconsBold.timer,
+              color: AppColors.limeShock,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'QUICK NUDGE',
+                    style: AppText.button.copyWith(color: AppColors.limeShock),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Short burst. No commitment.',
+                    style: AppText.micro.copyWith(color: AppColors.white),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              PhosphorIconsBold.caretRight,
+              color: AppColors.limeShock,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -115,23 +316,59 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _BrutalFab extends StatelessWidget {
+class _BrutalFab extends StatefulWidget {
   const _BrutalFab({required this.onPressed});
   final VoidCallback onPressed;
 
   @override
+  State<_BrutalFab> createState() => _BrutalFabState();
+}
+
+class _BrutalFabState extends State<_BrutalFab>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _idle = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  )..repeat(reverse: true);
+  bool _down = false;
+
+  @override
+  void dispose() {
+    _idle.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        height: 64,
-        width: 64,
-        decoration: BoxDecoration(
-          color: AppColors.electricPink,
-          border: AppShadows.solid(width: AppShadows.borderThick),
-          boxShadow: AppShadows.hard(offset: 6),
+      onTapDown: (_) => setState(() => _down = true),
+      onTapCancel: () => setState(() => _down = false),
+      onTapUp: (_) {
+        setState(() => _down = false);
+        widget.onPressed();
+      },
+      child: AnimatedBuilder(
+        animation: _idle,
+        builder: (BuildContext _, Widget? child) {
+          final double t = Curves.easeInOut.transform(_idle.value);
+          // Tiny breath: 1.0 → 1.04 idle, 0.94 on press.
+          final double scale = _down ? 0.94 : (1.0 + 0.04 * t);
+          return Transform.scale(scale: scale, child: child);
+        },
+        child: Container(
+          height: 64,
+          width: 64,
+          decoration: BoxDecoration(
+            color: AppColors.electricPink,
+            border: AppShadows.solid(width: AppShadows.borderThick),
+            boxShadow: AppShadows.hard(offset: _down ? 2 : 6),
+          ),
+          child: const Icon(
+            PhosphorIconsBold.plus,
+            size: 32,
+            color: AppColors.ink,
+          ),
         ),
-        child: const Icon(Icons.add, size: 36, color: AppColors.ink),
       ),
     );
   }

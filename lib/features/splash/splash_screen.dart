@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.electricPink,
+      backgroundColor: AppColors.vaporBlue,
       body: Center(
         child: AnimatedBuilder(
           animation: _ctrl,
@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
                   decoration: BoxDecoration(
-                    color: AppColors.neonYellow,
+                    color: AppColors.toxicLime,
                     border: AppShadows.solid(width: AppShadows.borderStress),
                     boxShadow: AppShadows.hard(offset: 12),
                   ),

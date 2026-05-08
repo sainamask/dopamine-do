@@ -8,7 +8,7 @@ class NeubrutalBottomSheet extends StatelessWidget {
   const NeubrutalBottomSheet({
     super.key,
     required this.child,
-    this.color = AppColors.neonYellow,
+    this.color = AppColors.cyan,
     this.topBorderWidth = AppShadows.borderRegular,
   });
 
@@ -19,7 +19,7 @@ class NeubrutalBottomSheet extends StatelessWidget {
   static Future<T?> show<T>(
     BuildContext context, {
     required WidgetBuilder builder,
-    Color color = AppColors.neonYellow,
+    Color color = AppColors.cyan,
   }) {
     return showModalBottomSheet<T>(
       context: context,

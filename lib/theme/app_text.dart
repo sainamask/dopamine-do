@@ -20,8 +20,8 @@ class AppText {
   static const TextStyle countdown = TextStyle(
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
-    fontWeight: FontWeight.w900,
-    fontSize: 72,
+    fontWeight: FontWeight.w800,
+    fontSize: 52,
     height: 0.95,
     letterSpacing: -2,
     color: AppColors.ink,
@@ -31,8 +31,8 @@ class AppText {
   static const TextStyle hero = TextStyle(
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
-    fontWeight: FontWeight.w900,
-    fontSize: 36,
+    fontWeight: FontWeight.w800,
+    fontSize: 26,
     height: 1.0,
     letterSpacing: -0.5,
     color: AppColors.ink,
@@ -41,8 +41,8 @@ class AppText {
   static const TextStyle title = TextStyle(
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
-    fontWeight: FontWeight.w900,
-    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    fontSize: 17,
     height: 1.05,
     color: AppColors.ink,
   );
@@ -50,23 +50,23 @@ class AppText {
   static const TextStyle button = TextStyle(
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
-    fontWeight: FontWeight.w900,
-    fontSize: 16,
+    fontWeight: FontWeight.w800,
+    fontSize: 13,
     letterSpacing: 1.2,
     color: AppColors.ink,
   );
 
   static const TextStyle body = TextStyle(
-    fontWeight: FontWeight.w700,
-    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    fontSize: 13,
     height: 1.3,
     color: AppColors.ink,
   );
 
   static const TextStyle micro = TextStyle(
-    fontWeight: FontWeight.w900,
-    fontSize: 12,
-    letterSpacing: 1.4,
+    fontWeight: FontWeight.w800,
+    fontSize: 11,
+    letterSpacing: 1.2,
     color: AppColors.ink,
   );
 }
