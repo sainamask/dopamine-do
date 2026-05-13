@@ -94,7 +94,10 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
         dialogTheme: const DialogThemeData(
           backgroundColor: AppColors.paper,
           shape: RoundedRectangleBorder(
-            side: BorderSide(color: AppColors.ink, width: AppShadows.borderThick),
+            side: BorderSide(
+              color: AppColors.ink,
+              width: AppShadows.borderThick,
+            ),
           ),
         ),
       ),
@@ -106,16 +109,16 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     HapticFeedback.mediumImpact();
     final String title = _title.text.trim();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name the task first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Name the task first')));
       return;
     }
     final Duration duration = _resolvedDuration;
     if (duration.inMinutes <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pick a duration')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pick a duration')));
       return;
     }
     final DateTime scheduled = DateTime(
@@ -140,7 +143,13 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
 
   String _formatDate(DateTime d) {
     const List<String> days = <String>[
-      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun',
     ];
     final String day = days[d.weekday - 1];
     return '$day, ${d.month.toString().padLeft(2, '0')}/'
@@ -205,7 +214,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
             ],
           ),
           const SizedBox(height: 18),
-          _Label('NUDGE LEAD-TIME'),
+          _Label('REMINDER'),
           const SizedBox(height: 6),
           _BrutalChips<Duration>(
             options: _leadOptions,

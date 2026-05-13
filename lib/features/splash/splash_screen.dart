@@ -48,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.vaporBlue,
+      backgroundColor: AppColors.electricPink,
       body: Center(
         child: AnimatedBuilder(
           animation: _ctrl,
@@ -58,7 +58,10 @@ class _SplashScreenState extends State<SplashScreen>
               child: Transform.scale(
                 scale: 0.6 + 0.6 * _scale.value,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 18,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.toxicLime,
                     border: AppShadows.solid(width: AppShadows.borderStress),
@@ -67,9 +70,12 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(
-                        'DOPAMINE-DO',
-                        style: AppText.hero.copyWith(fontSize: 48),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'DOPAMINE-DO',
+                          style: AppText.hero.copyWith(fontSize: 48),
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text('KILL PROCRASTINATION. LOUD.', style: AppText.micro),

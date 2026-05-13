@@ -18,7 +18,7 @@ class AppTheme {
         onSecondary: AppColors.ink,
         onSurface: AppColors.ink,
       ),
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         displayLarge: AppText.countdown,
         headlineLarge: AppText.hero,
         titleLarge: AppText.title,

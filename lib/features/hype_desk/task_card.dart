@@ -1,3 +1,4 @@
+import 'package:dopamine_do/services/date_time_ext.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -115,7 +116,8 @@ class _TaskCardState extends State<TaskCard>
                 border: AppShadows.solid(width: AppShadows.borderRegular),
               ),
               child: Text(
-                _timeLabel(),
+                // _timeLabel(),
+                _durationLabel(),
                 style: AppText.title.copyWith(
                   color: AppColors.white,
                   fontSize: 18,
@@ -137,7 +139,8 @@ class _TaskCardState extends State<TaskCard>
                   Text(
                     widget.isActive
                         ? 'NOW RUNNING · tap to jump in'
-                        : 'Nudge ${widget.task.nudgeLeadTime.inMinutes}m · ${_durationLabel()}',
+                        : 'Task · ${widget.task.scheduledAt.dateMonthAbv}',
+                    //
                     style: AppText.micro,
                   ),
                 ],

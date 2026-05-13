@@ -29,27 +29,19 @@ class AppColors {
   // ---- Accents (all chosen to read with ink-colored text) ----
 
   /// Calm hero. Default for most BrutalButtons + bottom sheets.
-  static const Color cyan = Color(0xFF22D3EE);
+  static const Color cyan = Color(0xFF67C6E3);
 
-  /// Warm accent — alarms, FAB, "incoming" energy.
-  static const Color electricPink = Color(0xFFEC4899);
-
-  /// Soft decorative violet. Tabs, success-sheet bg, idle accents.
+  static const Color electricPink = Color(0xFFD9468D);
+  static const Color electricYellow = Color(0xFFF2D86B);
   static const Color limeShock = Color(0xFFA78BFA);
-
-  /// "Energy" slot (formerly yellow). Use sparingly for highlights.
-  static const Color neonYellow = Color(0xFF84CC16);
-
-  /// Warm orange accent. Stress / heat moments.
-  static const Color safetyOrange = Color(0xFFF97316);
-
-  /// "GO / WIN" green. Punchier than neonYellow — used for primary
-  /// confirmation buttons (SAVE TASK, I'M ON IT, STACK THE WIN).
+  static const Color neonYellow = Color(0xFF2DD4BF);
+  static const Color safetyOrange = Color(0xFFE16522);
   static const Color toxicLime = Color(0xFF4ADE80);
 
   /// Deep dramatic blue — full-screen surfaces (takeover) where we want
   /// presence. Pair with white text, not ink.
-  static const Color vaporBlue = Color(0xFF6366F1);
+  // static const Color vaporBlue = Color(0xFF6366F1);
+  static const Color vaporBlue = Color(0xFF0F766E);
 
   // ---- Aliases kept for backwards-compat with files that already use
   // the old vapor names. They point at the new neutrals so nothing breaks.
@@ -65,5 +57,6 @@ class AppColors {
     toxicLime,
     safetyOrange,
     neonYellow,
+    electricYellow,
   ];
 }

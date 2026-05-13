@@ -17,12 +17,13 @@ import 'task_card.dart';
 // Cool-first rotation. Cyan / lavender / magenta lead the queue;
 // yellow is last so it stays an accent.
 const List<Color> _cardPalette = <Color>[
+  AppColors.toxicLime,
   AppColors.cyan,
+  AppColors.electricYellow,
+  AppColors.neonYellow,
+  AppColors.safetyOrange,
   AppColors.limeShock,
   AppColors.electricPink,
-  AppColors.toxicLime,
-  AppColors.safetyOrange,
-  AppColors.neonYellow,
 ];
 
 class HypeDeskScreen extends ConsumerWidget {
@@ -166,7 +167,7 @@ class HypeDeskScreen extends ConsumerWidget {
               const SizedBox(height: 14),
               Expanded(
                 child: upcoming.isEmpty
-                    ? const _EmptyState()
+                    ? _EmptyState(onPressed: () => _addTask(context, ref))
                     : ListView.separated(
                         padding: const EdgeInsets.only(bottom: 100),
                         itemCount: upcoming.length,
@@ -258,7 +259,7 @@ class _QuickNudgeStrip extends StatelessWidget {
           children: <Widget>[
             const Icon(
               PhosphorIconsBold.timer,
-              color: AppColors.limeShock,
+              color: AppColors.white,
               size: 28,
             ),
             const SizedBox(width: 12),
@@ -280,7 +281,7 @@ class _QuickNudgeStrip extends StatelessWidget {
             ),
             const Icon(
               PhosphorIconsBold.caretRight,
-              color: AppColors.limeShock,
+              color: AppColors.white,
               size: 22,
             ),
           ],
@@ -291,7 +292,9 @@ class _QuickNudgeStrip extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.onPressed});
+
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
