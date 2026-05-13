@@ -37,6 +37,10 @@ class AppColors {
   static const Color neonYellow = Color(0xFF2DD4BF);
   static const Color safetyOrange = Color(0xFFE16522);
   static const Color toxicLime = Color(0xFF4ADE80);
+  // static const Color water = Color(0xFFBFE9FF);
+  // static const Color water = Color(0xFF8FD3FF);
+  // static const Color water = Color(0xFFE6F7FF);
+  static const Color water = Color(0xFF3FA9D9);
 
   /// Deep dramatic blue — full-screen surfaces (takeover) where we want
   /// presence. Pair with white text, not ink.

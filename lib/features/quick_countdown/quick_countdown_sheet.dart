@@ -190,7 +190,7 @@ class _Chip extends StatelessWidget {
         child: Text(
           label,
           style: AppText.button.copyWith(
-            color: selected ? AppColors.toxicLime : AppColors.ink,
+            color: selected ? AppColors.white : AppColors.ink,
           ),
         ),
       ),

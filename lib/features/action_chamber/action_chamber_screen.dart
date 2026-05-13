@@ -65,12 +65,12 @@ class _IdleChamber extends StatelessWidget {
                 ),
                 child: Column(
                   children: <Widget>[
-                    Text('NO ACTIVE TASK', style: AppText.hero.copyWith(fontSize: 24)),
-                    const SizedBox(height: 6),
                     Text(
-                      'PICK ONE ON THE HYPE DESK',
-                      style: AppText.micro,
+                      'NO ACTIVE TASK',
+                      style: AppText.hero.copyWith(fontSize: 24),
                     ),
+                    const SizedBox(height: 6),
+                    Text('PICK ONE ON THE HYPE DESK', style: AppText.micro),
                   ],
                 ),
               ),
@@ -132,8 +132,9 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
     HapticFeedback.lightImpact();
     if (_paused) {
       // Resume: re-anchor _startedAt so elapsed math keeps _remainingMs.
-      _startedAt = DateTime.now()
-          .subtract(Duration(milliseconds: _totalMs - _remainingMs));
+      _startedAt = DateTime.now().subtract(
+        Duration(milliseconds: _totalMs - _remainingMs),
+      );
       setState(() => _paused = false);
       unawaited(TimerMusic.instance.play());
     } else {
@@ -197,7 +198,10 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
           decoration: const BoxDecoration(
             color: AppColors.limeShock,
             border: Border(
-              top: BorderSide(color: AppColors.ink, width: AppShadows.borderThick),
+              top: BorderSide(
+                color: AppColors.ink,
+                width: AppShadows.borderThick,
+              ),
             ),
           ),
           child: SafeArea(
@@ -212,12 +216,16 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                     child: IconHero(
                       icon: PhosphorIconsBold.confetti,
                       background: AppColors.electricPink,
-                      size: 140,
+                      size: 80,
                       animation: HeroAnim.wobble,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Text('TASK KILLED', style: AppText.hero, textAlign: TextAlign.center),
+                  const SizedBox(height: 24),
+                  Text(
+                    'TASK KILLED',
+                    style: AppText.hero,
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     widget.task.title,
@@ -273,18 +281,24 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.limeShock,
-                  border: AppShadows.solid(width: AppShadows.borderThick),
+                  color: AppColors.ink,
+                  border: AppShadows.solid(width: AppShadows.borderThin),
                   boxShadow: AppShadows.hard(offset: 6),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('NOW DOING', style: AppText.micro),
+                    Text(
+                      'NOW DOING',
+                      style: AppText.micro.copyWith(color: AppColors.white),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       widget.task.title,
-                      style: AppText.hero.copyWith(fontSize: 26),
+                      style: AppText.hero.copyWith(
+                        fontSize: 26,
+                        color: AppColors.white,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -292,15 +306,15 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                 ),
               ),
               const SizedBox(height: 14),
-              Center(
-                child: IconHero(
-                  icon: PhosphorIconsBold.lightning,
-                  background: AppColors.electricPink,
-                  size: 90,
-                  animation: HeroAnim.wobble,
-                ),
-              ),
-              const SizedBox(height: 14),
+              // Center(
+              //   child: IconHero(
+              //     icon: PhosphorIconsBold.lightning,
+              //     background: AppColors.electricPink,
+              //     size: 90,
+              //     animation: HeroAnim.wobble,
+              //   ),
+              // ),
+              const SizedBox(height: 60),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 8, bottom: 8),
@@ -308,8 +322,8 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                     remainingRatio: ratio,
                     stressLevel: stress,
                     label: _formatTime(_remainingMs),
-                    fillColor: AppColors.electricPink,
-                    backColor: AppColors.limeShock,
+                    fillColor: AppColors.water,
+                    backColor: AppColors.paper,
                   ),
                 ),
               ),
@@ -319,9 +333,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                   Expanded(
                     child: BrutalButton(
                       label: _paused ? 'RESUME' : 'PAUSE',
-                      color: _paused
-                          ? AppColors.toxicLime
-                          : AppColors.safetyOrange,
+                      color: _paused ? AppColors.safetyOrange : AppColors.white,
                       icon: _paused
                           ? PhosphorIconsBold.play
                           : PhosphorIconsBold.pause,
