@@ -139,7 +139,7 @@ class _TaskCardState extends State<TaskCard>
                   Text(
                     widget.isActive
                         ? 'NOW RUNNING · tap to jump in'
-                        : 'Task · ${widget.task.scheduledAt.dateMonthAbv}',
+                        : 'Task · ${widget.task.scheduledAt.dateMonthAbv} · ${_timeLabel()}',
                     //
                     style: AppText.micro,
                   ),

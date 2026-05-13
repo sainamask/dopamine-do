@@ -10,17 +10,18 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
   Future<List<Task>> build() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final List<String> raw = prefs.getStringList(_kTasksKey) ?? <String>[];
-    final List<Task> tasks = raw
-        .map((String s) {
-          try {
-            return Task.decode(s);
-          } catch (_) {
-            return null;
-          }
-        })
-        .whereType<Task>()
-        .toList()
-      ..sort((Task a, Task b) => a.scheduledAt.compareTo(b.scheduledAt));
+    final List<Task> tasks =
+        raw
+            .map((String s) {
+              try {
+                return Task.decode(s);
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<Task>()
+            .toList()
+          ..sort((Task a, Task b) => a.scheduledAt.compareTo(b.scheduledAt));
     return tasks;
   }
 
@@ -42,8 +43,9 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
 
   Future<void> remove(String id) async {
     final List<Task> current = state.value ?? <Task>[];
-    final List<Task> next =
-        current.where((Task t) => t.id != id).toList(growable: false);
+    final List<Task> next = current
+        .where((Task t) => t.id != id)
+        .toList(growable: false);
     state = AsyncData<List<Task>>(next);
     await _persist(next);
   }
@@ -51,9 +53,11 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
   Future<void> markCompleted(String id, {DateTime? at}) async {
     final List<Task> current = state.value ?? <Task>[];
     final List<Task> next = current
-        .map((Task t) => t.id == id
-            ? t.copyWith(completed: true, completedAt: at ?? DateTime.now())
-            : t)
+        .map(
+          (Task t) => t.id == id
+              ? t.copyWith(completed: true, completedAt: at ?? DateTime.now())
+              : t,
+        )
         .toList(growable: false);
     state = AsyncData<List<Task>>(next);
     await _persist(next);
@@ -64,15 +68,18 @@ final AsyncNotifierProvider<TasksNotifier, List<Task>> tasksProvider =
     AsyncNotifierProvider<TasksNotifier, List<Task>>(TasksNotifier.new);
 
 // Slices for screens that don't want both buckets at once.
-final Provider<List<Task>> upcomingTasksProvider = Provider<List<Task>>((Ref ref) {
-  final List<Task> tasks =
-      ref.watch(tasksProvider).value ?? const <Task>[];
-  return tasks.where((Task t) => !t.completed).toList(growable: false);
+final Provider<List<Task>> upcomingTasksProvider = Provider<List<Task>>((
+  Ref ref,
+) {
+  final List<Task> tasks = ref.watch(tasksProvider).value ?? const <Task>[];
+  return tasks.where((Task t) => !t.completed).toList()
+    ..sort((Task a, Task b) => a.scheduledAt.compareTo(b.scheduledAt));
 });
 
-final Provider<List<Task>> completedTasksProvider = Provider<List<Task>>((Ref ref) {
-  final List<Task> tasks =
-      ref.watch(tasksProvider).value ?? const <Task>[];
+final Provider<List<Task>> completedTasksProvider = Provider<List<Task>>((
+  Ref ref,
+) {
+  final List<Task> tasks = ref.watch(tasksProvider).value ?? const <Task>[];
   final List<Task> done = tasks.where((Task t) => t.completed).toList()
     ..sort((Task a, Task b) {
       final DateTime da = a.completedAt ?? a.scheduledAt;
@@ -114,9 +121,10 @@ class ActiveRunDurationNotifier extends Notifier<Duration?> {
 }
 
 final NotifierProvider<ActiveRunDurationNotifier, Duration?>
-    activeRunDurationProvider =
+activeRunDurationProvider =
     NotifierProvider<ActiveRunDurationNotifier, Duration?>(
-        ActiveRunDurationNotifier.new);
+      ActiveRunDurationNotifier.new,
+    );
 
 /// Bottom-nav tab selection.
 enum ShellTab { hype, action, glory }

@@ -41,6 +41,7 @@ dependencies:
   audioplayers: ^6.1.0
   flutter_screenutil: ^5.9.3
   intl: ^0.20.2
+  top_snackbar_flutter: ^3.3.0
 
 dev_dependencies:
   flutter_test:

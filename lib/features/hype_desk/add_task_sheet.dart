@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 import '../../models/task.dart';
 import '../../theme/app_colors.dart';
@@ -27,8 +28,8 @@ class AddTaskSheet extends StatefulWidget {
 
 class _AddTaskSheetState extends State<AddTaskSheet> {
   final TextEditingController _title = TextEditingController();
-  TimeOfDay _start = TimeOfDay.now();
-  DateTime _date = DateTime.now();
+  late TimeOfDay _start;
+  late DateTime _date;
   Duration _lead = const Duration(minutes: 30);
 
   // Duration: either a preset or custom (h, m).
@@ -50,6 +51,14 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final DateTime now = DateTime.now();
+    _date = now;
+    _start = _timeOfDayFromNow(now);
+  }
+
+  @override
   void dispose() {
     _title.dispose();
     super.dispose();
@@ -58,6 +67,17 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   Duration get _resolvedDuration => _customDuration
       ? Duration(hours: _customHours, minutes: _customMinutes)
       : _preset;
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  DateTime get _scheduledAt =>
+      DateTime(_date.year, _date.month, _date.day, _start.hour, _start.minute);
+
+  TimeOfDay _timeOfDayFromNow(DateTime now) {
+    final DateTime nextMinute = now.add(const Duration(minutes: 1));
+    return TimeOfDay(hour: nextMinute.hour, minute: nextMinute.minute);
+  }
 
   Future<void> _pickTime() async {
     HapticFeedback.selectionClick();
@@ -79,7 +99,15 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       lastDate: now.add(const Duration(days: 365)),
       builder: _brutalDialogTheme,
     );
-    if (picked != null) setState(() => _date = picked);
+    if (picked != null) {
+      setState(() {
+        _date = picked;
+        final DateTime now = DateTime.now();
+        if (_isSameDay(_date, now) && _scheduledAt.isBefore(now)) {
+          _start = _timeOfDayFromNow(now);
+        }
+      });
+    }
   }
 
   Widget _brutalDialogTheme(BuildContext ctx, Widget? child) {
@@ -105,29 +133,51 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
     );
   }
 
+  void _showTopMessage(String message) {
+    showTopSnackBar(
+      Overlay.of(context),
+      Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.electricYellow,
+              border: Border.all(color: AppColors.ink, width: 1),
+              boxShadow: AppShadows.hard(),
+            ),
+            child: Text(message, style: AppText.body),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _save() {
     HapticFeedback.mediumImpact();
+
     final String title = _title.text.trim();
+
     if (title.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Name the task first')));
+      _showTopMessage('Name the task first');
       return;
     }
+
     final Duration duration = _resolvedDuration;
+
     if (duration.inMinutes <= 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Pick a duration')));
+      _showTopMessage('Pick a duration');
       return;
     }
-    final DateTime scheduled = DateTime(
-      _date.year,
-      _date.month,
-      _date.day,
-      _start.hour,
-      _start.minute,
-    );
+
+    final DateTime scheduled = _scheduledAt;
+
+    if (scheduled.isBefore(DateTime.now())) {
+      _showTopMessage('Pick a time from now onward');
+      return;
+    }
+
     final Task task = Task(
       id: 't_${DateTime.now().microsecondsSinceEpoch}',
       title: title,
@@ -135,8 +185,41 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
       nudgeLeadTime: _lead,
       duration: duration,
     );
+
     Navigator.of(context).pop(task);
   }
+  // void _save() {
+  //   HapticFeedback.mediumImpact();
+  //   final String title = _title.text.trim();
+  //   if (title.isEmpty) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(const SnackBar(content: Text('Name the task first')));
+  //     return;
+  //   }
+  //   final Duration duration = _resolvedDuration;
+  //   if (duration.inMinutes <= 0) {
+  //     ScaffoldMessenger.of(
+  //       context,
+  //     ).showSnackBar(const SnackBar(content: Text('Pick a duration')));
+  //     return;
+  //   }
+  //   final DateTime scheduled = _scheduledAt;
+  //   if (scheduled.isBefore(DateTime.now())) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Pick a time from now onward')),
+  //     );
+  //     return;
+  //   }
+  //   final Task task = Task(
+  //     id: 't_${DateTime.now().microsecondsSinceEpoch}',
+  //     title: title,
+  //     scheduledAt: scheduled,
+  //     nudgeLeadTime: _lead,
+  //     duration: duration,
+  //   );
+  //   Navigator.of(context).pop(task);
+  // }
 
   String _formatLead(Duration d) =>
       d.inMinutes < 60 ? '${d.inMinutes}m' : '${d.inHours}h';

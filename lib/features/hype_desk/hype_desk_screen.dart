@@ -26,6 +26,17 @@ const List<Color> _cardPalette = <Color>[
   AppColors.electricPink,
 ];
 
+Color _cardColorForId(String id) {
+  int hash = 0;
+  for (final int unit in id.codeUnits) {
+    hash = (hash * 31 + unit) & 0x7fffffff;
+  }
+  return _cardPalette[hash % _cardPalette.length];
+}
+
+bool _isSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
 class HypeDeskScreen extends ConsumerWidget {
   const HypeDeskScreen({super.key});
 
@@ -90,6 +101,35 @@ class HypeDeskScreen extends ConsumerWidget {
     ref.read(activeRunDurationProvider.notifier).set(null);
   }
 
+  Widget _buildTaskRow(
+    BuildContext context,
+    WidgetRef ref,
+    Task task,
+    String? activeId,
+  ) {
+    return Dismissible(
+      key: ValueKey<String>('task-${task.id}'),
+      direction: DismissDirection.endToStart,
+      background: const _DeleteSwipeBackground(),
+      onDismissed: (_) {
+        HapticFeedback.mediumImpact();
+        // If the swiped task is the active one, clear the active state so the
+        // Action Chamber doesn't hold a stale id.
+        if (ref.read(activeTaskIdProvider) == task.id) {
+          ref.read(activeTaskIdProvider.notifier).clear();
+          ref.read(activeRunDurationProvider.notifier).set(null);
+        }
+        ref.read(tasksProvider.notifier).remove(task.id);
+      },
+      child: TaskCard(
+        task: task,
+        color: _cardColorForId(task.id),
+        isActive: activeId == task.id,
+        onTap: () => _onTaskTap(context, ref, task),
+      ),
+    );
+  }
+
   Future<_ConflictChoice?> _showConflictAlert(
     BuildContext context,
     WidgetRef ref,
@@ -151,6 +191,13 @@ class HypeDeskScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final List<Task> upcoming = ref.watch(upcomingTasksProvider);
     final String? activeId = ref.watch(activeTaskIdProvider);
+    final DateTime now = DateTime.now();
+    final List<Task> today = upcoming
+        .where((Task task) => _isSameDay(task.scheduledAt, now))
+        .toList(growable: false);
+    final List<Task> later = upcoming
+        .where((Task task) => !_isSameDay(task.scheduledAt, now))
+        .toList(growable: false);
 
     return Scaffold(
       body: SafeArea(
@@ -168,38 +215,26 @@ class HypeDeskScreen extends ConsumerWidget {
               Expanded(
                 child: upcoming.isEmpty
                     ? _EmptyState(onPressed: () => _addTask(context, ref))
-                    : ListView.separated(
+                    : ListView(
                         padding: const EdgeInsets.only(bottom: 100),
-                        itemCount: upcoming.length,
-                        separatorBuilder: (BuildContext _, int _) =>
-                            const SizedBox(height: 14),
-                        itemBuilder: (BuildContext _, int i) {
-                          final Task t = upcoming[i];
-                          return Dismissible(
-                            key: ValueKey<String>('task-${t.id}'),
-                            direction: DismissDirection.endToStart,
-                            background: const _DeleteSwipeBackground(),
-                            onDismissed: (_) {
-                              HapticFeedback.mediumImpact();
-                              // If the swiped task is the active one, clear
-                              // the active state so the Action Chamber doesn't
-                              // hold a stale id.
-                              if (ref.read(activeTaskIdProvider) == t.id) {
-                                ref.read(activeTaskIdProvider.notifier).clear();
-                                ref
-                                    .read(activeRunDurationProvider.notifier)
-                                    .set(null);
-                              }
-                              ref.read(tasksProvider.notifier).remove(t.id);
-                            },
-                            child: TaskCard(
-                              task: t,
-                              color: _cardPalette[i % _cardPalette.length],
-                              isActive: activeId == t.id,
-                              onTap: () => _onTaskTap(context, ref, t),
-                            ),
-                          );
-                        },
+                        children: <Widget>[
+                          if (today.isNotEmpty) ...<Widget>[
+                            const _TaskSectionHeader(label: 'TODAY'),
+                            const SizedBox(height: 10),
+                            for (final Task task in today) ...<Widget>[
+                              _buildTaskRow(context, ref, task, activeId),
+                              const SizedBox(height: 14),
+                            ],
+                          ],
+                          if (later.isNotEmpty) ...<Widget>[
+                            const _TaskSectionHeader(label: 'LATER'),
+                            const SizedBox(height: 10),
+                            for (final Task task in later) ...<Widget>[
+                              _buildTaskRow(context, ref, task, activeId),
+                              const SizedBox(height: 14),
+                            ],
+                          ],
+                        ],
                       ),
               ),
             ],
@@ -287,6 +322,27 @@ class _QuickNudgeStrip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TaskSectionHeader extends StatelessWidget {
+  const _TaskSectionHeader({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Text(label, style: AppText.micro),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: AppColors.ink),
+            child: SizedBox(height: 3),
+          ),
+        ),
+      ],
     );
   }
 }
