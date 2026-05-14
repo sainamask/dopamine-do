@@ -117,102 +117,134 @@ class _TankPainter extends CustomPainter {
     final Paint shadowPaint = Paint()..color = AppColors.ink;
     canvas.drawRect(tank.shift(Offset(shadowOffset, shadowOffset)), shadowPaint);
 
-    // Tank body.
-    final Paint backPaint = Paint()..color = back;
-    canvas.drawRect(tank, backPaint);
+    // Tank body — the empty/back colour reads as "air" above the waterline.
+    canvas.drawRect(tank, Paint()..color = back);
 
     // Liquid: top edge is a sine wave that drops as ratio drops.
     final double waveHeight = 10 + 14 * stress;
     final double waveLen = size.width / (1.5 + 1.5 * stress);
     final double restY = size.height * (1 - ratio);
 
-    final Path liquid = Path()..moveTo(0, size.height);
-    const int steps = 64;
-    for (int i = 0; i <= steps; i++) {
-      final double x = size.width * (i / steps);
-      final double y = restY +
+    double waveYAt(double x) {
+      return restY +
           math.sin((x / waveLen) * math.pi * 2 + sloshPhase) * waveHeight +
           math.sin((x / (waveLen * 0.6)) * math.pi * 2 - sloshPhase * 1.4) *
               waveHeight *
               0.4;
-      if (i == 0) {
-        liquid.lineTo(x, y);
-      } else {
-        liquid.lineTo(x, y);
-      }
+    }
+
+    final Path liquid = Path()..moveTo(0, size.height);
+    const int steps = 80;
+    for (int i = 0; i <= steps; i++) {
+      final double x = size.width * (i / steps);
+      liquid.lineTo(x, waveYAt(x));
     }
     liquid
       ..lineTo(size.width, size.height)
       ..close();
-    canvas.drawPath(liquid, Paint()..color = fill);
 
-    // Little boat bobbing on the wave. Only when there's enough water for
-    // it to actually float — otherwise it'd sit on the floor of the tank.
-    if (ratio > 0.08) {
-      double waveYAt(double x) {
-        return restY +
-            math.sin((x / waveLen) * math.pi * 2 + sloshPhase) * waveHeight +
-            math.sin((x / (waveLen * 0.6)) * math.pi * 2 - sloshPhase * 1.4) *
-                waveHeight *
-                0.4;
-      }
-
-      // Drift slowly side-to-side, well inside the tank walls.
-      final double boatX = size.width * 0.5 +
-          (size.width * 0.3) * math.sin(sloshPhase * 0.4);
-      final double boatY = waveYAt(boatX);
-      final double slope =
-          (waveYAt(boatX + 8) - waveYAt(boatX - 8)) / 16;
-      final double tilt = math.atan(slope);
-
-      final double s = math.min(size.width, size.height) / 220.0;
-      final double hullW = 38 * s;
-      final double hullH = 14 * s;
-      final double mastH = 26 * s;
-      final double sailW = 16 * s;
-
-      final Paint hullFill = Paint()..color = AppColors.white;
-      final Paint inkStroke = Paint()
-        ..color = AppColors.ink
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.2;
-      final Paint sailFill = Paint()..color = AppColors.electricYellow;
-
-      canvas.save();
-      canvas.translate(boatX, boatY);
-      canvas.rotate(tilt);
-
-      // Hull — trapezoid sitting on the waterline.
-      final Path hull = Path()
-        ..moveTo(-hullW / 2, 0)
-        ..lineTo(hullW / 2, 0)
-        ..lineTo(hullW / 2 - 5 * s, hullH)
-        ..lineTo(-hullW / 2 + 5 * s, hullH)
-        ..close();
-      canvas.drawPath(hull, hullFill);
-      canvas.drawPath(hull, inkStroke);
-
-      // Mast.
-      canvas.drawLine(
-        const Offset(0, 0),
-        Offset(0, -mastH),
-        Paint()
-          ..color = AppColors.ink
-          ..strokeWidth = 2.0
-          ..strokeCap = StrokeCap.square,
+    // Water with a top-to-bottom depth gradient — top stays the bright
+    // fill, bottom mixes toward ink so the tank reads as having volume.
+    final Color deep = Color.lerp(fill, AppColors.ink, 0.22)!;
+    final Paint waterPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[fill, deep],
+      ).createShader(
+        Rect.fromLTWH(0, restY, size.width, size.height - restY),
       );
+    canvas.drawPath(liquid, waterPaint);
 
-      // Triangular sail.
-      final Path sail = Path()
-        ..moveTo(0, -mastH)
-        ..lineTo(0, -mastH * 0.15)
-        ..lineTo(sailW, -mastH * 0.55)
-        ..close();
-      canvas.drawPath(sail, sailFill);
-      canvas.drawPath(sail, inkStroke);
-
-      canvas.restore();
+    // Reflective highlight stroke along the wave crest — gives the
+    // surface a clear "this is water" line instead of just a colour edge.
+    final Path crest = Path();
+    for (int i = 0; i <= steps; i++) {
+      final double x = size.width * (i / steps);
+      final double y = waveYAt(x);
+      if (i == 0) {
+        crest.moveTo(x, y);
+      } else {
+        crest.lineTo(x, y);
+      }
     }
+    canvas.drawPath(
+      crest,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round,
+    );
+
+    // Rising bubbles — 3 bubbles on a continuous loop, each drifting up
+    // from the tank floor to the waterline and fading as they reach it.
+    // sloshPhase is the global clock; bubbles are phase-offset.
+    if (ratio > 0.05) {
+      final double bubbleClock = sloshPhase / (math.pi * 2);
+      for (int i = 0; i < 3; i++) {
+        final double seed = (i * 0.37 + 0.13);
+        final double t = (bubbleClock * 0.45 + seed) % 1.0;
+        final double bubbleX = size.width * (0.18 + 0.64 * (seed * 2.7 % 1.0));
+        // Lerp from the floor up to just under the waterline.
+        final double bubbleY = size.height - (size.height - restY - 6) * t;
+        if (bubbleY < restY + 8) continue;
+        final double r = 2.5 + (i % 3) * 1.2;
+        // Fade out as the bubble nears the surface.
+        final double alpha = (1 - t).clamp(0.0, 1.0) * 0.55;
+        canvas.drawCircle(
+          Offset(bubbleX, bubbleY),
+          r,
+          Paint()
+            ..color = Colors.white.withValues(alpha: alpha)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.6,
+        );
+      }
+    }
+
+    // Measurement ticks on the inner walls — three short hashes at
+    // 25/50/75% so the eye can read the falling level against a fixed scale.
+    final Paint tick = Paint()
+      ..color = AppColors.ink
+      ..strokeWidth = 2;
+    final double tickLen = math.min(12, size.width * 0.05);
+    for (final double frac in <double>[0.25, 0.5, 0.75]) {
+      final double y = size.height * frac;
+      canvas.drawLine(Offset(0, y), Offset(tickLen, y), tick);
+      canvas.drawLine(
+        Offset(size.width - tickLen, y),
+        Offset(size.width, y),
+        tick,
+      );
+    }
+
+    // Drain at the bottom-center — a flat slot with two short stripes
+    // beneath, reading as "water exits here". Visible even when the tank
+    // is full so the metaphor stays legible.
+    final double drainW = math.min(36, size.width * 0.18);
+    final double drainH = 6;
+    final double cx = size.width / 2;
+    final double drainTop = size.height - drainH - 2;
+    canvas.drawRect(
+      Rect.fromLTWH(cx - drainW / 2, drainTop, drainW, drainH),
+      Paint()..color = AppColors.ink,
+    );
+    // Two short drip stripes just below the drain, hinting at outflow.
+    final Paint drip = Paint()
+      ..color = AppColors.ink
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.square;
+    canvas.drawLine(
+      Offset(cx - drainW * 0.25, size.height - 1),
+      Offset(cx - drainW * 0.25, size.height + 4),
+      drip,
+    );
+    canvas.drawLine(
+      Offset(cx + drainW * 0.25, size.height - 1),
+      Offset(cx + drainW * 0.25, size.height + 4),
+      drip,
+    );
 
     // Diagonal "danger" stripes pulse in when stressed.
     if (stress > 0.05) {
