@@ -34,32 +34,32 @@ class AppShell extends ConsumerWidget {
 class _BrutalNavBar extends ConsumerWidget {
   const _BrutalNavBar();
 
-  static const List<_TabSpec> _tabs = <_TabSpec>[
-    _TabSpec(
-      ShellTab.hype,
-      'HYPE',
-      PhosphorIconsBold.fire,
-      AppColors.limeShock,
-    ),
-    _TabSpec(
-      ShellTab.action,
-      'ACTION',
-      PhosphorIconsBold.lightning,
-      AppColors.electricPink,
-    ),
-    _TabSpec(
-      ShellTab.glory,
-      'GLORY',
-      PhosphorIconsBold.trophy,
-      AppColors.toxicLime,
-    ),
-  ];
+  static List<_TabSpec> get _tabs => <_TabSpec>[
+        _TabSpec(
+          ShellTab.hype,
+          'HYPE',
+          PhosphorIconsBold.fire,
+          AppColors.limeShock,
+        ),
+        _TabSpec(
+          ShellTab.action,
+          'ACTION',
+          PhosphorIconsBold.lightning,
+          AppColors.electricPink,
+        ),
+        _TabSpec(
+          ShellTab.glory,
+          'GLORY',
+          PhosphorIconsBold.trophy,
+          AppColors.toxicLime,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ShellTab current = ref.watch(shellTabProvider);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.paper,
         border: Border(
           top: BorderSide(color: AppColors.ink, width: AppShadows.borderThick),

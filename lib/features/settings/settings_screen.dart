@@ -38,7 +38,7 @@ class SettingsScreen extends ConsumerWidget {
                         border: AppShadows.solid(width: AppShadows.borderRegular),
                         boxShadow: AppShadows.hard(offset: 3),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         PhosphorIconsBold.arrowLeft,
                         color: AppColors.ink,
                         size: 18,
@@ -56,14 +56,6 @@ class SettingsScreen extends ConsumerWidget {
                   children: <Widget>[
                     _SectionHeader(label: 'VIBE'),
                     const SizedBox(height: 6),
-                    _ToggleTile(
-                      label: 'CALM MODE',
-                      hint: 'Quieter animations. Same app.',
-                      value: settings.calmMode,
-                      onChanged: (bool v) =>
-                          ref.read(settingsProvider.notifier).setCalmMode(v),
-                    ),
-                    const SizedBox(height: 8),
                     _ToggleTile(
                       label: 'QUICK NUDGE VOICE',
                       hint: 'Speak the final "99, 98…" countdown. '
@@ -112,10 +104,10 @@ class _SectionHeader extends StatelessWidget {
       children: <Widget>[
         Text(label, style: AppText.micro),
         const SizedBox(width: 8),
-        const Expanded(
+        Expanded(
           child: DecoratedBox(
             decoration: BoxDecoration(color: AppColors.ink),
-            child: SizedBox(height: 2),
+            child: const SizedBox(height: 2),
           ),
         ),
       ],
@@ -266,7 +258,7 @@ class _HypeSoundRowState extends State<_HypeSoundRow> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
+              Icon(
                 PhosphorIconsBold.musicNoteSimple,
                 color: AppColors.ink,
                 size: 16,
@@ -285,8 +277,8 @@ class _HypeSoundRowState extends State<_HypeSoundRow> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration:
-                        const BoxDecoration(color: AppColors.toxicLime),
-                    child: const Icon(
+                        BoxDecoration(color: AppColors.toxicLime),
+                    child: Icon(
                       PhosphorIconsBold.play,
                       color: AppColors.ink,
                       size: 14,
@@ -300,8 +292,8 @@ class _HypeSoundRowState extends State<_HypeSoundRow> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration:
-                        const BoxDecoration(color: AppColors.safetyOrange),
-                    child: const Icon(
+                        BoxDecoration(color: AppColors.safetyOrange),
+                    child: Icon(
                       PhosphorIconsBold.x,
                       color: AppColors.ink,
                       size: 14,
@@ -389,8 +381,8 @@ class _HypeLinesEditorState extends State<_HypeLinesEditor> {
                     horizontal: 10,
                     vertical: 8,
                   ),
-                  decoration: const BoxDecoration(color: AppColors.toxicLime),
-                  child: const Icon(
+                  decoration: BoxDecoration(color: AppColors.toxicLime),
+                  child: Icon(
                     PhosphorIconsBold.plus,
                     color: AppColors.ink,
                     size: 16,
@@ -451,8 +443,8 @@ class _HypeChip extends StatelessWidget {
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onRemove,
-            child: const Padding(
-              padding: EdgeInsets.all(4),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
               child: Icon(PhosphorIconsBold.x, color: AppColors.ink, size: 12),
             ),
           ),

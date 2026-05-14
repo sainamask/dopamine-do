@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String _kCalmKey = 'dopamine_do.settings.calm_mode';
 const String _kHypeLinesKey = 'dopamine_do.settings.hype_lines';
 const String _kHideNotifContentKey = 'dopamine_do.settings.hide_notif_content';
 const String _kMorningSummaryKey = 'dopamine_do.settings.morning_summary';
@@ -15,7 +14,6 @@ const String _kQuickVoiceKey = 'dopamine_do.settings.quick_voice';
 /// SharedPreferences so we can read/write it sync after first load.
 class AppSettings {
   const AppSettings({
-    this.calmMode = false,
     this.customHypeLines = const <String>[],
     this.hideNotificationContent = false,
     this.morningSummaryEnabled = false,
@@ -24,10 +22,6 @@ class AppSettings {
     this.hypeSoundName,
     this.quickCountdownVoiceEnabled = true,
   });
-
-  /// Tones down animations + intensity for users who like the concept but
-  /// not the full-volume visuals.
-  final bool calmMode;
 
   /// Replaces the default 'TASK KILLED' success line with one of these,
   /// chosen at random. Empty → use defaults.
@@ -54,7 +48,6 @@ class AppSettings {
   final bool quickCountdownVoiceEnabled;
 
   AppSettings copyWith({
-    bool? calmMode,
     List<String>? customHypeLines,
     bool? hideNotificationContent,
     bool? morningSummaryEnabled,
@@ -65,7 +58,6 @@ class AppSettings {
     bool clearHypeSound = false,
   }) {
     return AppSettings(
-      calmMode: calmMode ?? this.calmMode,
       customHypeLines: customHypeLines ?? this.customHypeLines,
       hideNotificationContent:
           hideNotificationContent ?? this.hideNotificationContent,
@@ -90,7 +82,6 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
   Future<AppSettings> build() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return AppSettings(
-      calmMode: prefs.getBool(_kCalmKey) ?? false,
       customHypeLines: prefs.getStringList(_kHypeLinesKey) ?? const <String>[],
       hideNotificationContent: prefs.getBool(_kHideNotifContentKey) ?? false,
       morningSummaryEnabled: prefs.getBool(_kMorningSummaryKey) ?? false,
@@ -127,14 +118,6 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     state = AsyncData<AppSettings>(next);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kQuickVoiceKey, value);
-  }
-
-  Future<void> setCalmMode(bool value) async {
-    final AppSettings current = state.value ?? const AppSettings();
-    final AppSettings next = current.copyWith(calmMode: value);
-    state = AsyncData<AppSettings>(next);
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_kCalmKey, value);
   }
 
   Future<void> setHideNotificationContent(bool value) async {
@@ -183,11 +166,6 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
 
 final AsyncNotifierProvider<SettingsNotifier, AppSettings> settingsProvider =
     AsyncNotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
-
-/// Convenience: sync read of calmMode, defaults to false until loaded.
-final Provider<bool> calmModeProvider = Provider<bool>((Ref ref) {
-  return ref.watch(settingsProvider).value?.calmMode ?? false;
-});
 
 /// Default lines used when the user hasn't added any custom ones.
 const List<String> kDefaultHypeLines = <String>[

@@ -149,7 +149,7 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  const Icon(PhosphorIconsBold.timer,
+                  Icon(PhosphorIconsBold.timer,
                       color: AppColors.ink, size: 16),
                   const SizedBox(width: 5),
                   Text('QUICK NUDGE', style: AppText.micro),
@@ -163,7 +163,7 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
                         border: AppShadows.solid(width: AppShadows.borderRegular),
                         boxShadow: AppShadows.hard(offset: 3),
                       ),
-                      child: const Icon(PhosphorIconsBold.x,
+                      child: Icon(PhosphorIconsBold.x,
                           color: AppColors.ink, size: 12),
                     ),
                   ),

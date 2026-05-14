@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../models/task.dart';
-import '../../state/settings_provider.dart';
 import '../../state/tasks_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -82,7 +81,7 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.paper,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         side: BorderSide(color: AppColors.ink, width: AppShadows.borderThick),
       ),
       builder: (BuildContext ctx) => _EditTitleSheet(initial: task.title),
@@ -119,13 +118,13 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
   Widget _brutalDialogTheme(BuildContext ctx, Widget? child) {
     return Theme(
       data: Theme.of(ctx).copyWith(
-        colorScheme: const ColorScheme.light(
+        colorScheme: ColorScheme.light(
           primary: AppColors.electricPink,
           onPrimary: AppColors.ink,
           surface: AppColors.paper,
           onSurface: AppColors.ink,
         ),
-        dialogTheme: const DialogThemeData(
+        dialogTheme: DialogThemeData(
           backgroundColor: AppColors.paper,
           shape: RoundedRectangleBorder(
             side: BorderSide(
@@ -141,7 +140,6 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool calm = ref.watch(calmModeProvider);
     // Watch tasks so edits made via the title/time pencils update instantly.
     final List<Task> all = ref.watch(tasksProvider).value ?? const <Task>[];
     final Task task = all.firstWhere(
@@ -180,7 +178,7 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
                     icon: PhosphorIconsBold.bellRinging,
                     background: AppColors.white,
                     size: 64,
-                    animation: calm ? HeroAnim.none : HeroAnim.wobble,
+                    animation: HeroAnim.wobble,
                   ),
                 ],
               ),
@@ -229,11 +227,11 @@ class _TimePill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(PhosphorIconsBold.clock, color: AppColors.ink, size: 12),
+            Icon(PhosphorIconsBold.clock, color: AppColors.ink, size: 12),
             const SizedBox(width: 6),
             Text(label, style: AppText.button),
             const SizedBox(width: 6),
-            const Icon(
+            Icon(
               PhosphorIconsBold.pencilSimple,
               color: AppColors.ink,
               size: 12,
@@ -279,7 +277,7 @@ class _EditableTitleCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
-                const Icon(
+                Icon(
                   PhosphorIconsBold.pencilSimple,
                   color: AppColors.ink,
                   size: 14,
@@ -336,7 +334,7 @@ class _EditTitleSheetState extends State<_EditTitleSheet> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
+              Icon(
                 PhosphorIconsBold.pencilSimple,
                 color: AppColors.ink,
                 size: 14,

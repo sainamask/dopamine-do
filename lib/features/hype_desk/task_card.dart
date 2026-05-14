@@ -191,7 +191,7 @@ class _ProcrastinationChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(
+          Icon(
             PhosphorIconsBold.warning,
             color: AppColors.ink,
             size: 12,

@@ -276,7 +276,6 @@ class _LiveChamberState extends ConsumerState<_LiveChamber>
         ? settings.customHypeLines
         : kDefaultHypeLines;
     final String hype = pool[math.Random().nextInt(pool.length)];
-    final bool calm = settings.calmMode;
     return showModalBottomSheet<void>(
       context: context,
       isDismissible: false,
@@ -284,7 +283,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber>
       backgroundColor: Colors.transparent,
       builder: (BuildContext ctx) {
         return Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.limeShock,
             border: Border(
               top: BorderSide(
@@ -306,7 +305,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber>
                       icon: PhosphorIconsBold.confetti,
                       background: AppColors.electricPink,
                       size: 70,
-                      animation: calm ? HeroAnim.none : HeroAnim.wobble,
+                      animation: HeroAnim.wobble,
                     ),
                   ),
                   const SizedBox(height: 20),

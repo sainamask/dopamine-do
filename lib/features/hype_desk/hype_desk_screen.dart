@@ -16,7 +16,7 @@ import 'task_card.dart';
 
 // Cool-first rotation. Cyan / lavender / magenta lead the queue;
 // yellow is last so it stays an accent.
-const List<Color> _cardPalette = <Color>[
+List<Color> get _cardPalette => <Color>[
   AppColors.toxicLime,
   AppColors.cyan,
   AppColors.electricYellow,
@@ -52,11 +52,7 @@ class HypeDeskScreen extends ConsumerWidget {
     await QuickCountdownSheet.show(context);
   }
 
-  Future<void> _editTask(
-    BuildContext context,
-    WidgetRef ref,
-    Task task,
-  ) async {
+  Future<void> _editTask(BuildContext context, WidgetRef ref, Task task) async {
     HapticFeedback.selectionClick();
     final EditTaskResult? result = await AddTaskSheet.showEdit(context, task);
     if (result == null) return;
@@ -108,8 +104,7 @@ class HypeDeskScreen extends ConsumerWidget {
 
     // The user may have edited the task on the takeover screen, so resolve
     // the latest version from the store before starting the session.
-    final List<Task> latest =
-        ref.read(tasksProvider).value ?? const <Task>[];
+    final List<Task> latest = ref.read(tasksProvider).value ?? const <Task>[];
     final Task running = latest.firstWhere(
       (Task t) => t.id == task.id,
       orElse: () => task,
@@ -176,7 +171,7 @@ class HypeDeskScreen extends ConsumerWidget {
               children: <Widget>[
                 Row(
                   children: <Widget>[
-                    const Icon(
+                    Icon(
                       PhosphorIconsBold.warning,
                       color: AppColors.ink,
                       size: 22,
@@ -289,7 +284,7 @@ class _DeleteSwipeBackground extends StatelessWidget {
         children: <Widget>[
           Text('DELETE', style: AppText.button),
           const SizedBox(width: 8),
-          const Icon(PhosphorIconsBold.trash, color: AppColors.ink, size: 22),
+          Icon(PhosphorIconsBold.trash, color: AppColors.ink, size: 22),
         ],
       ),
     );
@@ -313,11 +308,7 @@ class _QuickNudgeStrip extends StatelessWidget {
         ),
         child: Row(
           children: <Widget>[
-            const Icon(
-              PhosphorIconsBold.timer,
-              color: AppColors.white,
-              size: 22,
-            ),
+            Icon(PhosphorIconsBold.timer, color: AppColors.white, size: 22),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -335,7 +326,7 @@ class _QuickNudgeStrip extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               PhosphorIconsBold.caretRight,
               color: AppColors.white,
               size: 18,
@@ -357,10 +348,10 @@ class _TaskSectionHeader extends StatelessWidget {
       children: <Widget>[
         Text(label, style: AppText.micro),
         const SizedBox(width: 8),
-        const Expanded(
+        Expanded(
           child: DecoratedBox(
             decoration: BoxDecoration(color: AppColors.ink),
-            child: SizedBox(height: 2.5),
+            child: const SizedBox(height: 2.5),
           ),
         ),
       ],
@@ -442,11 +433,7 @@ class _BrutalFabState extends State<_BrutalFab>
             border: AppShadows.solid(width: AppShadows.borderThick),
             boxShadow: AppShadows.hard(offset: _down ? 2 : 5),
           ),
-          child: const Icon(
-            PhosphorIconsBold.plus,
-            size: 26,
-            color: AppColors.ink,
-          ),
+          child: Icon(PhosphorIconsBold.plus, size: 26, color: AppColors.ink),
         ),
       ),
     );

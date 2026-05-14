@@ -61,7 +61,8 @@ class _AbstractTimerWidgetState extends State<AbstractTimerWidget>
   @override
   Widget build(BuildContext context) {
     final double s = widget.stressLevel.clamp(0, 1);
-    final Color hotFill = Color.lerp(widget.fillColor, AppColors.safetyOrange, s)!;
+    final Color hotFill =
+        Color.lerp(widget.fillColor, AppColors.safetyOrange, s)!;
     final double border = 4 + 6 * s;
 
     return AnimatedBuilder(
@@ -145,6 +146,74 @@ class _TankPainter extends CustomPainter {
       ..close();
     canvas.drawPath(liquid, Paint()..color = fill);
 
+    // Little boat bobbing on the wave. Only when there's enough water for
+    // it to actually float — otherwise it'd sit on the floor of the tank.
+    if (ratio > 0.08) {
+      double waveYAt(double x) {
+        return restY +
+            math.sin((x / waveLen) * math.pi * 2 + sloshPhase) * waveHeight +
+            math.sin((x / (waveLen * 0.6)) * math.pi * 2 - sloshPhase * 1.4) *
+                waveHeight *
+                0.4;
+      }
+
+      // Drift slowly side-to-side, well inside the tank walls.
+      final double boatX = size.width * 0.5 +
+          (size.width * 0.3) * math.sin(sloshPhase * 0.4);
+      final double boatY = waveYAt(boatX);
+      final double slope =
+          (waveYAt(boatX + 8) - waveYAt(boatX - 8)) / 16;
+      final double tilt = math.atan(slope);
+
+      final double s = math.min(size.width, size.height) / 220.0;
+      final double hullW = 38 * s;
+      final double hullH = 14 * s;
+      final double mastH = 26 * s;
+      final double sailW = 16 * s;
+
+      final Paint hullFill = Paint()..color = AppColors.white;
+      final Paint inkStroke = Paint()
+        ..color = AppColors.ink
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2;
+      final Paint sailFill = Paint()..color = AppColors.electricYellow;
+
+      canvas.save();
+      canvas.translate(boatX, boatY);
+      canvas.rotate(tilt);
+
+      // Hull — trapezoid sitting on the waterline.
+      final Path hull = Path()
+        ..moveTo(-hullW / 2, 0)
+        ..lineTo(hullW / 2, 0)
+        ..lineTo(hullW / 2 - 5 * s, hullH)
+        ..lineTo(-hullW / 2 + 5 * s, hullH)
+        ..close();
+      canvas.drawPath(hull, hullFill);
+      canvas.drawPath(hull, inkStroke);
+
+      // Mast.
+      canvas.drawLine(
+        const Offset(0, 0),
+        Offset(0, -mastH),
+        Paint()
+          ..color = AppColors.ink
+          ..strokeWidth = 2.0
+          ..strokeCap = StrokeCap.square,
+      );
+
+      // Triangular sail.
+      final Path sail = Path()
+        ..moveTo(0, -mastH)
+        ..lineTo(0, -mastH * 0.15)
+        ..lineTo(sailW, -mastH * 0.55)
+        ..close();
+      canvas.drawPath(sail, sailFill);
+      canvas.drawPath(sail, inkStroke);
+
+      canvas.restore();
+    }
+
     // Diagonal "danger" stripes pulse in when stressed.
     if (stress > 0.05) {
       final Paint stripe = Paint()
@@ -168,7 +237,8 @@ class _TankPainter extends CustomPainter {
     // Border last so it sits on top of the fill.
     canvas.drawRect(tank, borderPaint);
 
-    // Label dead-center, massive.
+    // Label dead-center. Sized to sit comfortably alongside the boat
+    // without dominating the tank.
     final TextPainter tp = TextPainter(
       text: TextSpan(
         text: label,
@@ -176,9 +246,9 @@ class _TankPainter extends CustomPainter {
           fontFamily: 'ArchivoBlack',
           fontFamilyFallback: const <String>['Impact', 'Helvetica', 'Arial'],
           fontWeight: FontWeight.w900,
-          fontSize: math.min(size.width, size.height) * 0.35,
+          fontSize: math.min(size.width, size.height) * 0.22,
           height: 0.95,
-          letterSpacing: -2,
+          letterSpacing: -1.5,
           color: AppColors.ink,
         ),
       ),

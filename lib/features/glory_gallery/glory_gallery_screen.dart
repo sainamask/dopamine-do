@@ -12,14 +12,14 @@ import '../settings/settings_screen.dart';
 
 // Cool-first rotation: cyan + lavender + magenta lead, yellow last so it's
 // rare not dominant.
-const List<Color> _kPalette = <Color>[
-  AppColors.cyan,
-  AppColors.limeShock,
-  AppColors.electricPink,
-  AppColors.toxicLime,
-  AppColors.safetyOrange,
-  AppColors.neonYellow,
-];
+List<Color> get _kPalette => <Color>[
+      AppColors.cyan,
+      AppColors.limeShock,
+      AppColors.electricPink,
+      AppColors.toxicLime,
+      AppColors.safetyOrange,
+      AppColors.neonYellow,
+    ];
 
 class GloryGalleryScreen extends ConsumerWidget {
   const GloryGalleryScreen({super.key});
@@ -56,10 +56,10 @@ class GloryGalleryScreen extends ConsumerWidget {
               _ScoreStrip(count: stats.total),
               const SizedBox(height: 10),
               _StreakStrip(stats: stats),
-              if (done.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 10),
-                _WeeklyReplay(done: done, stats: stats),
-              ],
+              // if (done.isNotEmpty) ...<Widget>[
+              //   const SizedBox(height: 10),
+              //   _WeeklyReplay(done: done, stats: stats),
+              // ],
               const SizedBox(height: 12),
               Expanded(
                 child: done.isEmpty
@@ -102,7 +102,7 @@ class _SettingsButton extends StatelessWidget {
           border: AppShadows.solid(width: AppShadows.borderRegular),
           boxShadow: AppShadows.hard(offset: 3),
         ),
-        child: const Icon(
+        child: Icon(
           PhosphorIconsBold.gear,
           color: AppColors.ink,
           size: 18,
@@ -263,7 +263,9 @@ class _WeeklyReplay extends StatelessWidget {
     final List<int> perDay = List<int>.filled(7, 0);
     for (final Task t in done) {
       final DateTime when = t.completedAt ?? t.scheduledAt;
-      final int diff = today.difference(DateTime(when.year, when.month, when.day)).inDays;
+      final int diff = today
+          .difference(DateTime(when.year, when.month, when.day))
+          .inDays;
       if (diff >= 0 && diff < 7) {
         perDay[6 - diff] += 1;
       }
@@ -284,8 +286,10 @@ class _WeeklyReplay extends StatelessWidget {
             children: <Widget>[
               Text('THE WEEK', style: AppText.micro),
               const Spacer(),
-              Text(_overrunLabel(),
-                  style: AppText.micro.copyWith(color: AppColors.electricPink)),
+              Text(
+                _overrunLabel(),
+                style: AppText.micro.copyWith(color: AppColors.electricPink),
+              ),
             ],
           ),
           const SizedBox(height: 8),

@@ -69,13 +69,13 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
             child: Container(
               width: 40,
               height: 3,
-              decoration: const BoxDecoration(color: AppColors.ink),
+              decoration: BoxDecoration(color: AppColors.ink),
             ),
           ),
           const SizedBox(height: 12),
           Row(
             children: <Widget>[
-              const Icon(
+              Icon(
                 PhosphorIconsBold.timer,
                 color: AppColors.ink,
                 size: 16,

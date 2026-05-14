@@ -216,13 +216,13 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   Widget _brutalDialogTheme(BuildContext ctx, Widget? child) {
     return Theme(
       data: Theme.of(ctx).copyWith(
-        colorScheme: const ColorScheme.light(
+        colorScheme: ColorScheme.light(
           primary: AppColors.electricPink,
           onPrimary: AppColors.ink,
           surface: AppColors.paper,
           onSurface: AppColors.ink,
         ),
-        dialogTheme: const DialogThemeData(
+        dialogTheme: DialogThemeData(
           backgroundColor: AppColors.paper,
           shape: RoundedRectangleBorder(
             side: BorderSide(
@@ -350,7 +350,7 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
             child: Container(
               width: 52,
               height: 5,
-              decoration: const BoxDecoration(color: AppColors.ink),
+              decoration: BoxDecoration(color: AppColors.ink),
             ),
           ),
           const SizedBox(height: 14),
