@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../models/task.dart';
 import '../../state/tasks_provider.dart';
@@ -7,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text.dart';
 import '../../widgets/killed_it_badge.dart';
+import '../settings/settings_screen.dart';
 
 // Cool-first rotation: cyan + lavender + magenta lead, yellow last so it's
 // rare not dominant.
@@ -25,20 +27,40 @@ class GloryGalleryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final List<Task> done = ref.watch(completedTasksProvider);
+    final CompletionStats stats = ref.watch(completionStatsProvider);
 
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text('THE GLORY GALLERY', style: AppText.hero),
-              const SizedBox(height: 4),
-              Text('YOUR HIGH-SCORE LIST.', style: AppText.micro),
-              const SizedBox(height: 14),
-              _ScoreStrip(count: done.length),
-              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text('THE GLORY GALLERY', style: AppText.hero),
+                        const SizedBox(height: 3),
+                        Text('YOUR HIGH-SCORE LIST.', style: AppText.micro),
+                      ],
+                    ),
+                  ),
+                  _SettingsButton(),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _ScoreStrip(count: stats.total),
+              const SizedBox(height: 10),
+              _StreakStrip(stats: stats),
+              if (done.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 10),
+                _WeeklyReplay(done: done, stats: stats),
+              ],
+              const SizedBox(height: 12),
               Expanded(
                 child: done.isEmpty
                     ? const _EmptyGlory()
@@ -46,7 +68,7 @@ class GloryGalleryScreen extends ConsumerWidget {
                         padding: const EdgeInsets.only(bottom: 24),
                         itemCount: done.length,
                         separatorBuilder: (BuildContext _, int _) =>
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                         itemBuilder: (BuildContext _, int i) {
                           return _GloryCard(
                             task: done[i],
@@ -64,6 +86,32 @@ class GloryGalleryScreen extends ConsumerWidget {
   }
 }
 
+class _SettingsButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          border: AppShadows.solid(width: AppShadows.borderRegular),
+          boxShadow: AppShadows.hard(offset: 3),
+        ),
+        child: const Icon(
+          PhosphorIconsBold.gear,
+          color: AppColors.ink,
+          size: 18,
+        ),
+      ),
+    );
+  }
+}
+
 class _ScoreStrip extends StatelessWidget {
   const _ScoreStrip({required this.count});
   final int count;
@@ -71,17 +119,16 @@ class _ScoreStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.ink,
         border: AppShadows.solid(width: AppShadows.borderThick),
-        boxShadow: AppShadows.hard(offset: 6),
+        boxShadow: AppShadows.hard(offset: 5),
       ),
       child: Row(
         children: <Widget>[
           Text('SCORE', style: AppText.micro.copyWith(color: AppColors.white)),
           const Spacer(),
-          // Count-up animation when score changes — small dopamine hit.
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0, end: count.toDouble()),
             duration: const Duration(milliseconds: 700),
@@ -91,13 +138,209 @@ class _ScoreStrip extends StatelessWidget {
                 v.round().toString().padLeft(4, '0'),
                 style: AppText.hero.copyWith(
                   color: AppColors.white,
-                  fontSize: 32,
+                  fontSize: 27,
                 ),
               );
             },
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StreakStrip extends StatelessWidget {
+  const _StreakStrip({required this.stats});
+  final CompletionStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: _StatTile(
+            label: 'STREAK',
+            value: '${stats.currentStreak}',
+            unit: stats.currentStreak == 1 ? 'DAY' : 'DAYS',
+            color: AppColors.toxicLime,
+            icon: PhosphorIconsBold.flame,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatTile(
+            label: 'BEST',
+            value: '${stats.longestStreak}',
+            unit: stats.longestStreak == 1 ? 'DAY' : 'DAYS',
+            color: AppColors.cyan,
+            icon: PhosphorIconsBold.trophy,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatTile(
+            label: '7-DAY',
+            value: '${stats.lastSevenDays}',
+            unit: stats.lastSevenDays == 1 ? 'WIN' : 'WINS',
+            color: AppColors.electricYellow,
+            icon: PhosphorIconsBold.lightning,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.color,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final String unit;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        border: AppShadows.solid(width: AppShadows.borderThin),
+        boxShadow: AppShadows.hard(offset: 3),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(icon, color: AppColors.ink, size: 12),
+              const SizedBox(width: 4),
+              Text(label, style: AppText.micro.copyWith(fontSize: 9)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              Text(value, style: AppText.hero.copyWith(fontSize: 18)),
+              const SizedBox(width: 3),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(unit, style: AppText.micro.copyWith(fontSize: 8)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeeklyReplay extends StatelessWidget {
+  const _WeeklyReplay({required this.done, required this.stats});
+  final List<Task> done;
+  final CompletionStats stats;
+
+  String _overrunLabel() {
+    final double? avg = stats.avgOverrun;
+    if (avg == null) return 'GUESS GAME';
+    final int pct = ((avg - 1.0) * 100).round();
+    if (pct.abs() <= 5) return 'NAILS ESTIMATES';
+    if (pct > 0) return '+$pct% OVER';
+    return '$pct% UNDER';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final DateTime today = DateTime.now();
+    final List<int> perDay = List<int>.filled(7, 0);
+    for (final Task t in done) {
+      final DateTime when = t.completedAt ?? t.scheduledAt;
+      final int diff = today.difference(DateTime(when.year, when.month, when.day)).inDays;
+      if (diff >= 0 && diff < 7) {
+        perDay[6 - diff] += 1;
+      }
+    }
+    final int maxVal = perDay.fold<int>(0, (int p, int v) => v > p ? v : p);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        border: AppShadows.solid(width: AppShadows.borderRegular),
+        boxShadow: AppShadows.hard(offset: 4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text('THE WEEK', style: AppText.micro),
+              const Spacer(),
+              Text(_overrunLabel(),
+                  style: AppText.micro.copyWith(color: AppColors.electricPink)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 42,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                for (int i = 0; i < 7; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: 4),
+                  Expanded(
+                    child: _ReplayBar(
+                      value: perDay[i],
+                      max: maxVal,
+                      isToday: i == 6,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReplayBar extends StatelessWidget {
+  const _ReplayBar({
+    required this.value,
+    required this.max,
+    required this.isToday,
+  });
+  final int value;
+  final int max;
+  final bool isToday;
+
+  @override
+  Widget build(BuildContext context) {
+    final double ratio = max == 0 ? 0 : value / max;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: FractionallySizedBox(
+            heightFactor: ratio == 0 ? 0.04 : (0.15 + 0.85 * ratio),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isToday ? AppColors.electricPink : AppColors.toxicLime,
+                border: AppShadows.solid(width: 1.5),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -109,17 +352,17 @@ class _EmptyGlory extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.white,
           border: AppShadows.solid(width: AppShadows.borderThick),
-          boxShadow: AppShadows.hard(offset: 6),
+          boxShadow: AppShadows.hard(offset: 5),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('NO WINS YET', style: AppText.hero.copyWith(fontSize: 24)),
-            const SizedBox(height: 6),
+            Text('NO WINS YET', style: AppText.hero.copyWith(fontSize: 20)),
+            const SizedBox(height: 5),
             Text('GO KILL A TASK', style: AppText.micro),
           ],
         ),
@@ -148,21 +391,33 @@ class _GloryCard extends StatelessWidget {
     return '$d · $t';
   }
 
+  String? _delta() {
+    final Duration? actual = task.actualDuration;
+    if (actual == null) return null;
+    final int est = task.duration.inSeconds;
+    if (est <= 0) return null;
+    final double ratio = actual.inSeconds / est;
+    final int pct = ((ratio - 1.0) * 100).round();
+    if (pct.abs() <= 5) return 'ON TIME';
+    return pct > 0 ? '+$pct% OVER' : '$pct% UNDER';
+  }
+
   @override
   Widget build(BuildContext context) {
     final DateTime when = task.completedAt ?? task.scheduledAt;
+    final String? delta = _delta();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: color,
-        border: AppShadows.solid(width: AppShadows.borderThick),
-        boxShadow: AppShadows.hard(offset: 6),
+        border: AppShadows.solid(width: AppShadows.borderThin),
+        boxShadow: AppShadows.hard(offset: 2),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.ink,
               border: AppShadows.solid(width: AppShadows.borderRegular),
@@ -171,27 +426,35 @@ class _GloryCard extends StatelessWidget {
               '#${rank.toString().padLeft(2, '0')}',
               style: AppText.title.copyWith(
                 color: AppColors.white,
-                fontSize: 16,
+                fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   task.title,
-                  style: AppText.hero.copyWith(fontSize: 22),
+                  style: AppText.hero.copyWith(fontSize: 19),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Text(_stamp(when), style: AppText.micro),
+                const SizedBox(height: 3),
+                Row(
+                  children: <Widget>[
+                    Text(_stamp(when), style: AppText.micro),
+                    if (delta != null) ...<Widget>[
+                      const SizedBox(width: 6),
+                      Text('· $delta', style: AppText.micro),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           const KilledItBadge(),
         ],
       ),

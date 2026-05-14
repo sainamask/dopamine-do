@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../models/task.dart';
 import '../../services/timer_music.dart';
+import '../../state/settings_provider.dart';
 import '../../state/tasks_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
@@ -39,37 +42,37 @@ class _IdleChamber extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Text('THE ACTION CHAMBER', style: AppText.hero),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text('STAGED FOR DAMAGE.', style: AppText.micro),
               const Spacer(),
               Center(
                 child: IconHero(
                   icon: PhosphorIconsBold.gameController,
                   background: AppColors.electricPink,
-                  size: 180,
+                  size: 150,
                   animation: HeroAnim.pulse,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   border: AppShadows.solid(width: AppShadows.borderThick),
-                  boxShadow: AppShadows.hard(offset: 6),
+                  boxShadow: AppShadows.hard(offset: 5),
                 ),
                 child: Column(
                   children: <Widget>[
                     Text(
                       'NO ACTIVE TASK',
-                      style: AppText.hero.copyWith(fontSize: 24),
+                      style: AppText.hero.copyWith(fontSize: 20),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 5),
                     Text('PICK ONE ON THE HYPE DESK', style: AppText.micro),
                   ],
                 ),
@@ -92,7 +95,8 @@ class _LiveChamber extends ConsumerStatefulWidget {
   ConsumerState<_LiveChamber> createState() => _LiveChamberState();
 }
 
-class _LiveChamberState extends ConsumerState<_LiveChamber> {
+class _LiveChamberState extends ConsumerState<_LiveChamber>
+    with WidgetsBindingObserver {
   late int _totalMs;
   late int _remainingMs;
   late DateTime _startedAt;
@@ -100,10 +104,13 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
   int _lastSecondTicked = -1;
   bool _completed = false;
   bool _paused = false;
+  int _elapsedAtPauseMs = 0;
+  int _persistTickCounter = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _resetForCurrentTask();
   }
 
@@ -116,38 +123,96 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
     }
   }
 
-  void _resetForCurrentTask() {
+  Future<void> _resetForCurrentTask() async {
     _ticker?.cancel();
     _totalMs = widget.duration.inMilliseconds;
     _remainingMs = _totalMs;
     _startedAt = DateTime.now();
+    _elapsedAtPauseMs = 0;
     _lastSecondTicked = -1;
     _completed = false;
     _paused = false;
+
+    // Restore-from-persistence: if a saved session matches this task, reuse
+    // its anchor time so the timer continues where it left off rather than
+    // restarting from full.
+    final ActiveSession? saved = await ActiveSessionStore.instance.load();
+    if (mounted &&
+        saved != null &&
+        saved.taskId == widget.task.id &&
+        saved.totalMs == _totalMs) {
+      if (saved.paused) {
+        _paused = true;
+        _elapsedAtPauseMs = saved.elapsedAtPauseMs;
+        _remainingMs = (_totalMs - _elapsedAtPauseMs).clamp(0, _totalMs);
+        _startedAt = DateTime.now().subtract(
+          Duration(milliseconds: _elapsedAtPauseMs),
+        );
+      } else {
+        _startedAt = saved.startedAt;
+        final int elapsed = DateTime.now()
+            .difference(_startedAt)
+            .inMilliseconds;
+        _remainingMs = (_totalMs - elapsed).clamp(0, _totalMs);
+      }
+    } else {
+      await _persistSession();
+    }
+
     _ticker = Timer.periodic(const Duration(milliseconds: 50), _onTick);
-    unawaited(TimerMusic.instance.play());
+    if (!_paused) {
+      unawaited(TimerMusic.instance.play());
+    }
+    if (mounted) setState(() {});
   }
 
   void _togglePause() {
     HapticFeedback.lightImpact();
     if (_paused) {
-      // Resume: re-anchor _startedAt so elapsed math keeps _remainingMs.
       _startedAt = DateTime.now().subtract(
-        Duration(milliseconds: _totalMs - _remainingMs),
+        Duration(milliseconds: _elapsedAtPauseMs),
       );
       setState(() => _paused = false);
       unawaited(TimerMusic.instance.play());
     } else {
+      _elapsedAtPauseMs = _totalMs - _remainingMs;
       setState(() => _paused = true);
       unawaited(TimerMusic.instance.pause());
     }
+    unawaited(_persistSession());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker?.cancel();
     unawaited(TimerMusic.instance.stop());
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Snapshot on every backgrounding so a kill mid-session is recoverable.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      unawaited(_persistSession());
+    }
+  }
+
+  Future<void> _persistSession() async {
+    if (_completed) return;
+    final int elapsedMs = _paused
+        ? _elapsedAtPauseMs
+        : (_totalMs - _remainingMs).clamp(0, _totalMs);
+    await ActiveSessionStore.instance.save(
+      ActiveSession(
+        taskId: widget.task.id,
+        totalMs: _totalMs,
+        startedAt: _startedAt,
+        elapsedAtPauseMs: elapsedMs,
+        paused: _paused,
+      ),
+    );
   }
 
   void _onTick(Timer _) {
@@ -156,15 +221,20 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
     final int remaining = (_totalMs - elapsed).clamp(0, _totalMs);
     final int second = (remaining / 1000).ceil();
 
-    // Mechanical "thud" once per second during the final 60.
     if (remaining <= 60000 && remaining > 0 && second != _lastSecondTicked) {
       _lastSecondTicked = second;
       HapticFeedback.heavyImpact();
-      // TODO(audio): play a mechanical "thud" tick via audioplayers.
       SystemSound.play(SystemSoundType.click);
     }
 
     if (mounted) setState(() => _remainingMs = remaining);
+
+    // Persist every ~2s while running so the resume snapshot stays fresh.
+    _persistTickCounter++;
+    if (_persistTickCounter >= 40) {
+      _persistTickCounter = 0;
+      unawaited(_persistSession());
+    }
 
     if (remaining == 0 && !_completed) {
       _completed = true;
@@ -176,9 +246,21 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
   Future<void> _onComplete() async {
     HapticFeedback.heavyImpact();
     unawaited(TimerMusic.instance.stop());
+    final Duration actual = Duration(milliseconds: _totalMs);
+    await ActiveSessionStore.instance.clear();
+    // Play the user's custom win sound if they picked one — best-effort.
+    final String? hypeSound = ref.read(settingsProvider).value?.hypeSoundPath;
+    if (hypeSound != null && hypeSound.isNotEmpty) {
+      try {
+        await AudioPlayer().play(DeviceFileSource(hypeSound), volume: 0.95);
+      } catch (_) {
+        /* missing/broken file shouldn't break the flow */
+      }
+    }
+    if (!mounted) return;
     await ref
         .read(tasksProvider.notifier)
-        .markCompleted(widget.task.id, at: DateTime.now());
+        .markCompletedWithUndo(widget.task.id, context, actualDuration: actual);
     if (!mounted) return;
     await _showSuccessSheet();
     if (!mounted) return;
@@ -188,6 +270,13 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
   }
 
   Future<void> _showSuccessSheet() {
+    final AppSettings settings =
+        ref.read(settingsProvider).value ?? const AppSettings();
+    final List<String> pool = settings.customHypeLines.isNotEmpty
+        ? settings.customHypeLines
+        : kDefaultHypeLines;
+    final String hype = pool[math.Random().nextInt(pool.length)];
+    final bool calm = settings.calmMode;
     return showModalBottomSheet<void>(
       context: context,
       isDismissible: false,
@@ -207,7 +296,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -216,23 +305,19 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                     child: IconHero(
                       icon: PhosphorIconsBold.confetti,
                       background: AppColors.electricPink,
-                      size: 80,
-                      animation: HeroAnim.wobble,
+                      size: 70,
+                      animation: calm ? HeroAnim.none : HeroAnim.wobble,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'TASK KILLED',
-                    style: AppText.hero,
-                    textAlign: TextAlign.center,
-                  ),
+                  const SizedBox(height: 20),
+                  Text(hype, style: AppText.hero, textAlign: TextAlign.center),
                   const SizedBox(height: 4),
                   Text(
                     widget.task.title,
                     style: AppText.title,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
                   BrutalButton(
                     label: 'STACK THE WIN',
                     color: AppColors.toxicLime,
@@ -250,6 +335,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
   void _bail() {
     _ticker?.cancel();
     unawaited(TimerMusic.instance.stop());
+    unawaited(ActiveSessionStore.instance.clear());
     ref.read(activeTaskIdProvider.notifier).clear();
     ref.read(activeRunDurationProvider.notifier).set(null);
     ref.read(shellTabProvider.notifier).set(ShellTab.hype);
@@ -274,16 +360,16 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
       backgroundColor: AppColors.paper,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.ink,
                   border: AppShadows.solid(width: AppShadows.borderThin),
-                  boxShadow: AppShadows.hard(offset: 6),
+                  boxShadow: AppShadows.hard(offset: 5),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,11 +378,11 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                       'NOW DOING',
                       style: AppText.micro.copyWith(color: AppColors.white),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       widget.task.title,
                       style: AppText.hero.copyWith(
-                        fontSize: 26,
+                        fontSize: 22,
                         color: AppColors.white,
                       ),
                       maxLines: 1,
@@ -305,19 +391,10 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
-              // Center(
-              //   child: IconHero(
-              //     icon: PhosphorIconsBold.lightning,
-              //     background: AppColors.electricPink,
-              //     size: 90,
-              //     animation: HeroAnim.wobble,
-              //   ),
-              // ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 50),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 8, bottom: 8),
+                  padding: const EdgeInsets.only(right: 6, bottom: 6),
                   child: AbstractTimerWidget(
                     remainingRatio: ratio,
                     stressLevel: stress,
@@ -327,7 +404,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 50),
               Row(
                 children: <Widget>[
                   Expanded(
@@ -340,7 +417,7 @@ class _LiveChamberState extends ConsumerState<_LiveChamber> {
                       onPressed: _togglePause,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: BrutalButton(
                       label: 'BAIL',

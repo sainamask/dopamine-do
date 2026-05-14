@@ -67,33 +67,33 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
         children: <Widget>[
           Center(
             child: Container(
-              width: 48,
-              height: 4,
+              width: 40,
+              height: 3,
               decoration: const BoxDecoration(color: AppColors.ink),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Row(
             children: <Widget>[
               const Icon(
                 PhosphorIconsBold.timer,
                 color: AppColors.ink,
-                size: 20,
+                size: 16,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text('QUICK NUDGE', style: AppText.title),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             'Short burst. We start the second you tap GO.',
             style: AppText.body,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: <Widget>[
               for (int i = 0; i < _presetSeconds.length; i++) ...<Widget>[
-                if (i > 0) const SizedBox(width: 8),
+                if (i > 0) const SizedBox(width: 6),
                 Expanded(
                   child: _Chip(
                     label: _label(_presetSeconds[i]),
@@ -108,7 +108,7 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
                   ),
                 ),
               ],
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: _Chip(
                   label: 'CUSTOM',
@@ -122,7 +122,7 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
             ],
           ),
           if (_custom) ...<Widget>[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Row(
               children: <Widget>[
                 Expanded(
@@ -135,7 +135,7 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
                     onChanged: (int v) => setState(() => _customMin = v),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: BrutalStepper(
                     label: 'SEC',
@@ -151,12 +151,12 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
               ],
             ),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           BrutalButton(
             label: 'GO',
             color: AppColors.electricPink,
             textStyle: AppText.button.copyWith(color: AppColors.white),
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             onPressed: _go,
           ),
         ],
@@ -180,12 +180,12 @@ class _Chip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 44,
+        height: 38,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? AppColors.ink : AppColors.white,
           border: AppShadows.solid(width: AppShadows.borderRegular),
-          boxShadow: selected ? <BoxShadow>[] : AppShadows.hard(offset: 4),
+          boxShadow: selected ? <BoxShadow>[] : AppShadows.hard(offset: 3),
         ),
         child: Text(
           label,

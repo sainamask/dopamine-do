@@ -72,11 +72,25 @@ class _TaskCardState extends State<TaskCard>
         : '${(m / 60).toStringAsFixed(m % 60 == 0 ? 0 : 1)}h';
   }
 
+  String _recurrenceLabel() {
+    switch (widget.task.recurrence) {
+      case TaskRecurrence.daily:
+        return '· DAILY';
+      case TaskRecurrence.weekdays:
+        return '· WEEKDAYS';
+      case TaskRecurrence.weekly:
+        return '· WEEKLY';
+      case TaskRecurrence.none:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color cardColor = widget.isActive
         ? AppColors.limeShock
         : widget.color;
+    final bool procrastinated = widget.task.isProcrastinated;
     return GestureDetector(
       onTapDown: (_) => setState(() => _down = true),
       onTapCancel: () => setState(() => _down = false),
@@ -91,16 +105,15 @@ class _TaskCardState extends State<TaskCard>
           final double pulseT = widget.isActive
               ? Curves.easeInOut.transform(_pulse.value)
               : 0.0;
-          // Lift slightly while pulsing — reads as "alive".
-          final double lift = _down ? 4 : -2 * pulseT;
-          final double shadow = (_down ? 2 : 6 + 2 * pulseT).toDouble();
+          final double lift = _down ? 3 : -1 * pulseT;
+          final double shadow = (_down ? 1 : 3 + 1 * pulseT).toDouble();
           return Transform.translate(
             offset: Offset(_down ? 4 : 0, lift),
             child: Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: cardColor,
-                border: AppShadows.solid(width: AppShadows.borderThick),
+                border: AppShadows.solid(width: AppShadows.borderThin),
                 boxShadow: AppShadows.hard(offset: shadow),
               ),
               child: child,
@@ -110,52 +123,85 @@ class _TaskCardState extends State<TaskCard>
         child: Row(
           children: <Widget>[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.ink,
                 border: AppShadows.solid(width: AppShadows.borderRegular),
               ),
               child: Text(
-                // _timeLabel(),
                 _durationLabel(),
                 style: AppText.title.copyWith(
                   color: AppColors.white,
-                  fontSize: 18,
+                  fontSize: 15,
                 ),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
                     widget.task.title,
-                    style: AppText.hero.copyWith(fontSize: 22),
+                    style: AppText.hero.copyWith(fontSize: 19),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     widget.isActive
                         ? 'NOW RUNNING · tap to jump in'
-                        : 'Task · ${widget.task.scheduledAt.dateMonthAbv} · ${_timeLabel()}',
-                    //
+                        : 'Task · ${widget.task.scheduledAt.dateMonthAbv} · ${_timeLabel()} ${_recurrenceLabel()}',
                     style: AppText.micro,
                   ),
+                  if (procrastinated) ...<Widget>[
+                    const SizedBox(height: 6),
+                    _ProcrastinationChip(count: widget.task.rescheduleCount),
+                  ],
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Icon(
               widget.isActive
                   ? PhosphorIconsBold.lightning
                   : PhosphorIconsBold.play,
               color: AppColors.ink,
-              size: 32,
+              size: 26,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProcrastinationChip extends StatelessWidget {
+  const _ProcrastinationChip({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.safetyOrange,
+        border: AppShadows.solid(width: 2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Icon(
+            PhosphorIconsBold.warning,
+            color: AppColors.ink,
+            size: 12,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            'PUSHED $count× · BREAK IT DOWN?',
+            style: AppText.micro.copyWith(fontSize: 9),
+          ),
+        ],
       ),
     );
   }

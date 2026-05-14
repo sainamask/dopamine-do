@@ -42,6 +42,11 @@ dependencies:
   flutter_screenutil: ^5.9.3
   intl: ^0.20.2
   top_snackbar_flutter: ^3.3.0
+  timezone: ^0.9.4
+  flutter_timezone: ^3.0.1
+  permission_handler: ^11.3.1
+  speech_to_text: ^7.0.0
+  file_picker: ^8.1.6
 
 dev_dependencies:
   flutter_test:

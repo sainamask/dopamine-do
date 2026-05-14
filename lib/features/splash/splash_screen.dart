@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _ctrl.forward();
-    Future<void>.delayed(const Duration(milliseconds: 2000), () {
+    Future<void>.delayed(const Duration(milliseconds: 1600), () {
       if (mounted) widget.onDone();
     });
   }
@@ -59,13 +59,13 @@ class _SplashScreenState extends State<SplashScreen>
                 scale: 0.6 + 0.6 * _scale.value,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 18,
+                    horizontal: 24,
+                    vertical: 14,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.toxicLime,
                     border: AppShadows.solid(width: AppShadows.borderStress),
-                    boxShadow: AppShadows.hard(offset: 12),
+                    boxShadow: AppShadows.hard(offset: 10),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -74,10 +74,10 @@ class _SplashScreenState extends State<SplashScreen>
                         fit: BoxFit.scaleDown,
                         child: Text(
                           'DOPAMINE-DO',
-                          style: AppText.hero.copyWith(fontSize: 48),
+                          style: AppText.hero.copyWith(fontSize: 40),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 5),
                       Text('KILL PROCRASTINATION. LOUD.', style: AppText.micro),
                     ],
                   ),

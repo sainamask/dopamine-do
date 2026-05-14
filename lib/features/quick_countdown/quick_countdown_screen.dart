@@ -3,27 +3,32 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../services/timer_music.dart';
+import '../../state/settings_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_text.dart';
 import '../../widgets/brutal_button.dart';
 
-/// Calm visual countdown. A single brutalist drain ring carries the eye;
-/// digits sit inside, secondary. TTS still speaks every second.
-class QuickCountdownScreen extends StatefulWidget {
+/// Below this many seconds remaining, the countdown is voiced ("99, 98…").
+/// Above it, each tick is just a soft system click.
+const int _kVoiceThresholdSec = 99;
+
+class QuickCountdownScreen extends ConsumerStatefulWidget {
   const QuickCountdownScreen({super.key, required this.duration});
 
   final Duration duration;
 
   @override
-  State<QuickCountdownScreen> createState() => _QuickCountdownScreenState();
+  ConsumerState<QuickCountdownScreen> createState() =>
+      _QuickCountdownScreenState();
 }
 
-class _QuickCountdownScreenState extends State<QuickCountdownScreen> {
+class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
   late int _totalMs;
   late int _remainingMs;
   late DateTime _startedAt;
@@ -82,9 +87,17 @@ class _QuickCountdownScreenState extends State<QuickCountdownScreen> {
 
     if (second != _lastSecond && remaining > 0) {
       _lastSecond = second;
-      // Calm: light selection click, not a heavy thud.
       HapticFeedback.selectionClick();
-      unawaited(_speak(second.toString()));
+      final bool voiceOn = ref
+              .read(settingsProvider)
+              .value
+              ?.quickCountdownVoiceEnabled ??
+          true;
+      if (second <= _kVoiceThresholdSec && voiceOn) {
+        unawaited(_speak(second.toString()));
+      } else {
+        SystemSound.play(SystemSoundType.click);
+      }
     }
 
     if (mounted) setState(() => _remainingMs = remaining);
@@ -93,7 +106,16 @@ class _QuickCountdownScreenState extends State<QuickCountdownScreen> {
       _done = true;
       _ticker?.cancel();
       HapticFeedback.mediumImpact();
-      unawaited(_speak('Done'));
+      final bool voiceOn = ref
+              .read(settingsProvider)
+              .value
+              ?.quickCountdownVoiceEnabled ??
+          true;
+      if (voiceOn) {
+        unawaited(_speak('Done'));
+      } else {
+        SystemSound.play(SystemSoundType.alert);
+      }
     }
   }
 
@@ -121,28 +143,28 @@ class _QuickCountdownScreenState extends State<QuickCountdownScreen> {
       backgroundColor: AppColors.paper,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Row(
                 children: <Widget>[
                   const Icon(PhosphorIconsBold.timer,
-                      color: AppColors.ink, size: 18),
-                  const SizedBox(width: 6),
+                      color: AppColors.ink, size: 16),
+                  const SizedBox(width: 5),
                   Text('QUICK NUDGE', style: AppText.micro),
                   const Spacer(),
                   GestureDetector(
                     onTap: _close,
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         color: AppColors.white,
                         border: AppShadows.solid(width: AppShadows.borderRegular),
                         boxShadow: AppShadows.hard(offset: 3),
                       ),
                       child: const Icon(PhosphorIconsBold.x,
-                          color: AppColors.ink, size: 14),
+                          color: AppColors.ink, size: 12),
                     ),
                   ),
                 ],
@@ -152,7 +174,7 @@ class _QuickCountdownScreenState extends State<QuickCountdownScreen> {
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(16),
                       child: _DrainRing(
                         ratio: ratio,
                         color: ringColor,
@@ -201,11 +223,11 @@ class _DrainRing extends StatelessWidget {
       painter: _RingPainter(ratio: ratio.clamp(0, 1), color: color),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(36),
+          padding: const EdgeInsets.all(30),
           child: FittedBox(
             child: Text(
               label,
-              style: AppText.countdown.copyWith(fontSize: 64),
+              style: AppText.countdown.copyWith(fontSize: 54),
             ),
           ),
         ),
@@ -224,7 +246,7 @@ class _RingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Offset c = size.center(Offset.zero);
     final double rOuter = math.min(size.width, size.height) / 2;
-    const double thickness = 24;
+    const double thickness = 20;
     final double rMid = rOuter - thickness / 2 - 2;
     final double rInner = rOuter - thickness - 4;
 

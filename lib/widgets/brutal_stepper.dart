@@ -6,8 +6,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_text.dart';
 
-/// Compact +/- stepper. Designed to fit two side-by-side on a phone screen,
-/// so the +/- buttons and the value tile are all 44px tall.
+/// Compact +/- stepper. Designed to fit two side-by-side on a phone screen.
 class BrutalStepper extends StatelessWidget {
   const BrutalStepper({
     super.key,
@@ -44,7 +43,7 @@ class BrutalStepper extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(label, style: AppText.micro),
-        const SizedBox(height: 6),
+        const SizedBox(height: 5),
         Row(
           children: <Widget>[
             _SquareButton(
@@ -52,29 +51,29 @@ class BrutalStepper extends StatelessWidget {
               onTap: () => _bump(-step),
               color: AppColors.white,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Expanded(
               child: Container(
-                height: 44,
+                height: 38,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: color,
                   border: AppShadows.solid(width: AppShadows.borderRegular),
-                  boxShadow: AppShadows.hard(offset: 4),
+                  boxShadow: AppShadows.hard(offset: 3),
                 ),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: Text(
                       '${value.toString()}$suffix',
-                      style: AppText.hero.copyWith(fontSize: 22),
+                      style: AppText.hero.copyWith(fontSize: 19),
                     ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             _SquareButton(
               icon: PhosphorIconsBold.plus,
               onTap: () => _bump(step),
@@ -117,15 +116,15 @@ class _SquareButtonState extends State<_SquareButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 80),
         curve: Curves.easeOut,
-        width: 44,
-        height: 44,
+        width: 38,
+        height: 38,
         transform: Matrix4.translationValues(_down ? 3 : 0, _down ? 3 : 0, 0),
         decoration: BoxDecoration(
           color: widget.color,
           border: AppShadows.solid(width: AppShadows.borderRegular),
           boxShadow: _down ? <BoxShadow>[] : AppShadows.hard(offset: 3),
         ),
-        child: Icon(widget.icon, color: AppColors.ink, size: 18),
+        child: Icon(widget.icon, color: AppColors.ink, size: 15),
       ),
     );
   }

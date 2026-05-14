@@ -68,7 +68,7 @@ class _BrutalNavBar extends ConsumerWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             children: <Widget>[
               for (final _TabSpec t in _tabs)
@@ -116,18 +116,18 @@ class _NavTab extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 3),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: selected ? spec.color : AppColors.white,
             border: AppShadows.solid(width: AppShadows.borderRegular),
-            boxShadow: selected ? <BoxShadow>[] : AppShadows.hard(offset: 4),
+            boxShadow: selected ? <BoxShadow>[] : AppShadows.hard(offset: 3),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(spec.icon, size: 22, color: AppColors.ink),
+              Icon(spec.icon, size: 18, color: AppColors.ink),
               const SizedBox(height: 2),
               Text(spec.label, style: AppText.micro),
             ],

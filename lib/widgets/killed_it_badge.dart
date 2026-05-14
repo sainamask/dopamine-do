@@ -14,7 +14,7 @@ class KilledItBadge extends StatelessWidget {
     return Transform.rotate(
       angle: angle,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: AppColors.ink,
           border: AppShadows.solid(width: AppShadows.borderRegular),
@@ -23,7 +23,7 @@ class KilledItBadge extends StatelessWidget {
           'KILLED IT',
           style: AppText.button.copyWith(
             color: AppColors.limeShock,
-            fontSize: 14,
+            fontSize: 12,
           ),
         ),
       ),

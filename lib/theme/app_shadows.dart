@@ -5,12 +5,12 @@ import 'app_colors.dart';
 class AppShadows {
   AppShadows._();
 
-  static const double borderThin = 3.0;
-  static const double borderRegular = 4.0;
-  static const double borderThick = 6.0;
-  static const double borderStress = 8.0;
+  static const double borderThin = 2.5;
+  static const double borderRegular = 3.0;
+  static const double borderThick = 5.0;
+  static const double borderStress = 6.5;
 
-  static List<BoxShadow> hard({double offset = 6, Color color = AppColors.ink}) {
+  static List<BoxShadow> hard({double offset = 5, Color color = AppColors.ink}) {
     return <BoxShadow>[
       BoxShadow(
         color: color,

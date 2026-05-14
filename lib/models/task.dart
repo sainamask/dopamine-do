@@ -1,5 +1,33 @@
 import 'dart:convert';
 
+enum TaskRecurrence { none, daily, weekdays, weekly }
+
+TaskRecurrence _recurrenceFromName(String? name) {
+  switch (name) {
+    case 'daily':
+      return TaskRecurrence.daily;
+    case 'weekdays':
+      return TaskRecurrence.weekdays;
+    case 'weekly':
+      return TaskRecurrence.weekly;
+    default:
+      return TaskRecurrence.none;
+  }
+}
+
+String _recurrenceToName(TaskRecurrence r) {
+  switch (r) {
+    case TaskRecurrence.daily:
+      return 'daily';
+    case TaskRecurrence.weekdays:
+      return 'weekdays';
+    case TaskRecurrence.weekly:
+      return 'weekly';
+    case TaskRecurrence.none:
+      return 'none';
+  }
+}
+
 class Task {
   Task({
     required this.id,
@@ -9,6 +37,10 @@ class Task {
     required this.duration,
     this.completed = false,
     this.completedAt,
+    this.recurrence = TaskRecurrence.none,
+    this.rescheduleCount = 0,
+    this.actualDuration,
+    this.parentId,
   });
 
   final String id;
@@ -18,6 +50,16 @@ class Task {
   final Duration duration;
   final bool completed;
   final DateTime? completedAt;
+  final TaskRecurrence recurrence;
+  final int rescheduleCount;
+
+  /// How long the user actually spent on the task before completion.
+  /// Filled in on completion; null until then.
+  final Duration? actualDuration;
+
+  /// If this is a recurring instance, the id of the original/template task.
+  /// Lets us group recurring instances in stats.
+  final String? parentId;
 
   Task copyWith({
     bool? completed,
@@ -26,6 +68,10 @@ class Task {
     DateTime? scheduledAt,
     Duration? nudgeLeadTime,
     Duration? duration,
+    TaskRecurrence? recurrence,
+    int? rescheduleCount,
+    Duration? actualDuration,
+    String? parentId,
   }) {
     return Task(
       id: id,
@@ -35,7 +81,52 @@ class Task {
       duration: duration ?? this.duration,
       completed: completed ?? this.completed,
       completedAt: completedAt ?? this.completedAt,
+      recurrence: recurrence ?? this.recurrence,
+      rescheduleCount: rescheduleCount ?? this.rescheduleCount,
+      actualDuration: actualDuration ?? this.actualDuration,
+      parentId: parentId ?? this.parentId,
     );
+  }
+
+  /// True if the user has rescheduled this task >= 3 times.
+  bool get isProcrastinated => rescheduleCount >= 3;
+
+  /// Compute the next scheduled date for the next instance of a recurring
+  /// task, based on this one's scheduledAt. Returns null if not recurring.
+  DateTime? nextOccurrenceFrom(DateTime base) {
+    switch (recurrence) {
+      case TaskRecurrence.none:
+        return null;
+      case TaskRecurrence.daily:
+        return DateTime(
+          base.year,
+          base.month,
+          base.day + 1,
+          scheduledAt.hour,
+          scheduledAt.minute,
+        );
+      case TaskRecurrence.weekdays:
+        DateTime next = DateTime(
+          base.year,
+          base.month,
+          base.day + 1,
+          scheduledAt.hour,
+          scheduledAt.minute,
+        );
+        while (next.weekday == DateTime.saturday ||
+            next.weekday == DateTime.sunday) {
+          next = next.add(const Duration(days: 1));
+        }
+        return next;
+      case TaskRecurrence.weekly:
+        return DateTime(
+          base.year,
+          base.month,
+          base.day + 7,
+          scheduledAt.hour,
+          scheduledAt.minute,
+        );
+    }
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -46,6 +137,10 @@ class Task {
         'durationSeconds': duration.inSeconds,
         'completed': completed,
         'completedAt': completedAt?.toIso8601String(),
+        'recurrence': _recurrenceToName(recurrence),
+        'rescheduleCount': rescheduleCount,
+        'actualSeconds': actualDuration?.inSeconds,
+        'parentId': parentId,
       };
 
   factory Task.fromJson(Map<String, dynamic> json) {
@@ -59,6 +154,12 @@ class Task {
       completedAt: json['completedAt'] == null
           ? null
           : DateTime.parse(json['completedAt'] as String),
+      recurrence: _recurrenceFromName(json['recurrence'] as String?),
+      rescheduleCount: (json['rescheduleCount'] as int?) ?? 0,
+      actualDuration: json['actualSeconds'] == null
+          ? null
+          : Duration(seconds: json['actualSeconds'] as int),
+      parentId: json['parentId'] as String?,
     );
   }
 

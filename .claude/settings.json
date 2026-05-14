@@ -4,7 +4,8 @@
       "Bash(flutter test *)",
       "Bash(flutter pub *)",
       "Bash(grep -E \"static const \\(play|lightning|bell|bellRinging|trophy|timer|confetti|fireworks|skull|caretUp|caretDown|caretRight|plus|pause|warning|target|crosshair|gameController|joystick|alarm|fire\\) \" /home/saina/.pub-cache/hosted/pub.dev/phosphor_flutter-2.1.0/lib/src/phosphor_icons_bold.dart)",
-      "Read(//home/saina/.pub-cache/hosted/pub.dev/phosphor_flutter-2.1.0/lib/src/**)"
+      "Read(//home/saina/.pub-cache/hosted/pub.dev/phosphor_flutter-2.1.0/lib/src/**)",
+      "Bash(flutter devices *)"
     ]
   }
 }

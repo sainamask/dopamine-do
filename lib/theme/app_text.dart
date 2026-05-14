@@ -21,20 +21,19 @@ class AppText {
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
     fontWeight: FontWeight.w800,
-    fontSize: 52,
+    fontSize: 42,
     height: 0.95,
-    letterSpacing: -2,
+    letterSpacing: -1.5,
     color: AppColors.ink,
   );
 
-  // Hero — capped at 36px per Phase 2 spec.
   static const TextStyle hero = TextStyle(
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
     fontWeight: FontWeight.w800,
-    fontSize: 26,
+    fontSize: 21,
     height: 1.0,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
     color: AppColors.ink,
   );
 
@@ -42,7 +41,7 @@ class AppText {
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
     fontWeight: FontWeight.w800,
-    fontSize: 17,
+    fontSize: 14,
     height: 1.05,
     color: AppColors.ink,
   );
@@ -51,22 +50,22 @@ class AppText {
     fontFamily: displayFamily,
     fontFamilyFallback: _fallback,
     fontWeight: FontWeight.w800,
-    fontSize: 13,
-    letterSpacing: 1.2,
+    fontSize: 11,
+    letterSpacing: 1.0,
     color: AppColors.ink,
   );
 
   static const TextStyle body = TextStyle(
     fontWeight: FontWeight.w600,
-    fontSize: 13,
+    fontSize: 12,
     height: 1.3,
     color: AppColors.ink,
   );
 
   static const TextStyle micro = TextStyle(
     fontWeight: FontWeight.w800,
-    fontSize: 11,
-    letterSpacing: 1.2,
+    fontSize: 10,
+    letterSpacing: 1.0,
     color: AppColors.ink,
   );
 }
