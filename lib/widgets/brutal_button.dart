@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
@@ -54,7 +53,6 @@ class _BrutalButtonState extends State<BrutalButton>
   }
 
   void _down() {
-    HapticFeedback.lightImpact();
     _controller.forward();
   }
 

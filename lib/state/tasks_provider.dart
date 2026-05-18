@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/task.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_shadows.dart';
 import '../theme/app_text.dart';
@@ -63,6 +66,16 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
             .whereType<Task>()
             .toList()
           ..sort((Task a, Task b) => a.scheduledAt.compareTo(b.scheduledAt));
+
+    // Re-arm any pending alarms. Idempotent: zonedSchedule with the same
+    // id replaces any prior schedule, so this is safe to call on every
+    // app launch and rebuild.
+    final DateTime now = DateTime.now();
+    for (final Task t in tasks) {
+      if (!t.completed && t.scheduledAt.isAfter(now)) {
+        unawaited(NotificationService.instance.scheduleForTask(t));
+      }
+    }
     return tasks;
   }
 
@@ -80,6 +93,7 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
       ..sort((Task a, Task b) => a.scheduledAt.compareTo(b.scheduledAt));
     state = AsyncData<List<Task>>(next);
     await _persist(next);
+    await NotificationService.instance.scheduleForTask(task);
   }
 
   /// Replace a task by id. Used by the edit/reschedule sheet.
@@ -116,6 +130,10 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
       state = AsyncData<List<Task>>(next);
       await _persist(next);
     }
+
+    // Reschedule the notification for the new time.
+    await NotificationService.instance.cancelForTask(finalTask.id);
+    await NotificationService.instance.scheduleForTask(finalTask);
   }
 
   Future<void> remove(String id) async {
@@ -125,6 +143,7 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
         .toList(growable: false);
     state = AsyncData<List<Task>>(next);
     await _persist(next);
+    await NotificationService.instance.cancelForTask(id);
   }
 
   /// Remove with a snackbar that lets the user undo within ~5s.
@@ -167,6 +186,8 @@ class TasksNotifier extends AsyncNotifier<List<Task>> {
         .toList(growable: false);
     state = AsyncData<List<Task>>(next);
     await _persist(next);
+    // Cancel the alarm for the just-completed task.
+    await NotificationService.instance.cancelForTask(id);
 
     // If recurring, queue the next instance.
     if (source.recurrence != TaskRecurrence.none) {

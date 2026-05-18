@@ -167,7 +167,6 @@ class _LiveChamberState extends ConsumerState<_LiveChamber>
   }
 
   void _togglePause() {
-    HapticFeedback.lightImpact();
     if (_paused) {
       _startedAt = DateTime.now().subtract(
         Duration(milliseconds: _elapsedAtPauseMs),

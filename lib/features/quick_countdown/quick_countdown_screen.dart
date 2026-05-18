@@ -37,7 +37,6 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
   bool _done = false;
 
   late final FlutterTts _tts;
-  bool _ttsReady = false;
 
   @override
   void initState() {
@@ -48,7 +47,7 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
     _ticker = Timer.periodic(const Duration(milliseconds: 50), _onTick);
 
     _tts = FlutterTts();
-    _initTts();
+    unawaited(_initTts());
     unawaited(TimerMusic.instance.play());
   }
 
@@ -58,14 +57,14 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
       await _tts.setPitch(0.9);
       await _tts.setVolume(1.0);
       await _tts.awaitSpeakCompletion(false);
-      _ttsReady = true;
-    } catch (_) {
-      _ttsReady = false;
-    }
+      // Warm the engine. On Android the TTS connection is lazy and the
+      // first numeric speak() can be silently dropped while it connects,
+      // so we kick it with a no-op now.
+      await _tts.speak(' ');
+    } catch (_) {/* best-effort */}
   }
 
   Future<void> _speak(String text) async {
-    if (!_ttsReady) return;
     try {
       await _tts.stop();
       await _tts.speak(text);
@@ -87,7 +86,6 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
 
     if (second != _lastSecond && remaining > 0) {
       _lastSecond = second;
-      HapticFeedback.selectionClick();
       final bool voiceOn = ref
               .read(settingsProvider)
               .value
@@ -120,7 +118,6 @@ class _QuickCountdownScreenState extends ConsumerState<QuickCountdownScreen> {
   }
 
   void _close() {
-    HapticFeedback.lightImpact();
     Navigator.of(context).maybePop();
   }
 

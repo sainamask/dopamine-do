@@ -47,6 +47,7 @@ dependencies:
   permission_handler: ^11.3.1
   speech_to_text: ^7.0.0
   file_picker: ^8.1.6
+  flutter_local_notifications: ^17.2.4
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +59,20 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  # Used by tool/generate_icon.dart to paint a brutalist app icon PNG.
+  image: ^4.3.0
+  # Generates per-density launcher icons from the master PNG.
+  flutter_launcher_icons: ^0.14.1
+
+# flutter_launcher_icons reads its config from this top-level key.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  # Adaptive icon (Android 8+): a foreground layer over a flat background.
+  adaptive_icon_background: "#D9468D"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  min_sdk_android: 21
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

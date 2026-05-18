@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -119,7 +118,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   }
 
   Future<void> _toggleVoice() async {
-    HapticFeedback.selectionClick();
     if (_listening) {
       await _speech.stop();
       if (mounted) setState(() => _listening = false);
@@ -149,7 +147,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
 
     if (!mounted) return;
     setState(() => _listening = true);
-    HapticFeedback.mediumImpact();
     await _speech.listen(
       onResult: (result) {
         final String text = result.recognizedWords;
@@ -183,7 +180,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   }
 
   Future<void> _pickTime() async {
-    HapticFeedback.selectionClick();
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _start,
@@ -193,7 +189,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   }
 
   Future<void> _pickDate() async {
-    HapticFeedback.selectionClick();
     final DateTime now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -258,8 +253,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   }
 
   void _save() {
-    HapticFeedback.mediumImpact();
-
     final String title = _title.text.trim();
 
     if (title.isEmpty) {
@@ -304,7 +297,6 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
   }
 
   void _delete() {
-    HapticFeedback.mediumImpact();
     Navigator.of(context).pop(const EditTaskResult(delete: true));
   }
 
@@ -647,18 +639,12 @@ class _DurationPicker extends StatelessWidget {
           _Chip(
             label: labelOf(d),
             selected: !isCustom && d == preset,
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onPreset(d);
-            },
+            onTap: () => onPreset(d),
           ),
         _Chip(
           label: 'CUSTOM',
           selected: isCustom,
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onCustomTap();
-          },
+          onTap: onCustomTap,
         ),
       ],
     );

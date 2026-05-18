@@ -1,11 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'features/shell/app_shell.dart';
 import 'features/splash/splash_screen.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
-void main() => runApp(const ProviderScope(child: DopamineDoApp()));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Bring up the alarm channel + timezone data before the tree builds so
+  // the first task add() can schedule successfully.
+  await NotificationService.instance.init();
+  // Fire-and-forget the permission prompt; we don't want to block boot
+  // on the user tapping Allow.
+  unawaited(NotificationService.instance.requestPermissionsIfNeeded());
+  runApp(const ProviderScope(child: DopamineDoApp()));
+}
 
 class DopamineDoApp extends StatelessWidget {
   const DopamineDoApp({super.key});

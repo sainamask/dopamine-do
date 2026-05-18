@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../theme/app_colors.dart';
@@ -37,7 +36,6 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
       _custom ? (_customMin * 60 + _customSec).clamp(15, 60 * 60) : _seconds;
 
   void _go() {
-    HapticFeedback.mediumImpact();
     final int secs = _resolvedSeconds;
     Navigator.of(context).pop();
     Future<void>.microtask(() {
@@ -98,13 +96,10 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
                   child: _Chip(
                     label: _label(_presetSeconds[i]),
                     selected: !_custom && _seconds == _presetSeconds[i],
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _custom = false;
-                        _seconds = _presetSeconds[i];
-                      });
-                    },
+                    onTap: () => setState(() {
+                      _custom = false;
+                      _seconds = _presetSeconds[i];
+                    }),
                   ),
                 ),
               ],
@@ -113,10 +108,7 @@ class _QuickCountdownSheetState extends State<QuickCountdownSheet> {
                 child: _Chip(
                   label: 'CUSTOM',
                   selected: _custom,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => _custom = true);
-                  },
+                  onTap: () => setState(() => _custom = true),
                 ),
               ),
             ],

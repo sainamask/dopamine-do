@@ -13,7 +13,7 @@ class TimerMusic {
   static final TimerMusic instance = TimerMusic._();
 
   /// Edit this to point at your audio. Leave empty to disable music silently.
-  static const String streamUrl = '';
+  static const String streamUrl = 'https://stream.zeno.fm/0r0xa792kwzuv';
 
   final AudioPlayer _player = AudioPlayer()..setReleaseMode(ReleaseMode.loop);
   bool _started = false;

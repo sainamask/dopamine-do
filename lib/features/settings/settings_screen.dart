@@ -1,7 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -130,10 +129,7 @@ class _ToggleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onChanged(!value);
-      },
+      onTap: () => onChanged(!value),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -232,7 +228,6 @@ class _HypeSoundRowState extends State<_HypeSoundRow> {
   Future<void> _previewSound() async {
     final String? path = widget.settings.hypeSoundPath;
     if (path == null) return;
-    HapticFeedback.lightImpact();
     try {
       await _preview.stop();
       await _preview.play(DeviceFileSource(path), volume: 0.9);

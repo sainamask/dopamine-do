@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -41,19 +40,16 @@ class HypeDeskScreen extends ConsumerWidget {
   const HypeDeskScreen({super.key});
 
   Future<void> _addTask(BuildContext context, WidgetRef ref) async {
-    HapticFeedback.selectionClick();
     final Task? task = await AddTaskSheet.show(context);
     if (task == null) return;
     await ref.read(tasksProvider.notifier).add(task);
   }
 
   Future<void> _quickNudge(BuildContext context) async {
-    HapticFeedback.selectionClick();
     await QuickCountdownSheet.show(context);
   }
 
   Future<void> _editTask(BuildContext context, WidgetRef ref, Task task) async {
-    HapticFeedback.selectionClick();
     final EditTaskResult? result = await AddTaskSheet.showEdit(context, task);
     if (result == null) return;
     if (result.delete) {
@@ -71,7 +67,6 @@ class HypeDeskScreen extends ConsumerWidget {
     WidgetRef ref,
     Task task,
   ) async {
-    HapticFeedback.selectionClick();
     final String? activeId = ref.read(activeTaskIdProvider);
 
     // Already running THIS task → bypass takeover, jump to action.
@@ -130,7 +125,6 @@ class HypeDeskScreen extends ConsumerWidget {
       direction: DismissDirection.endToStart,
       background: const _DeleteSwipeBackground(),
       onDismissed: (_) {
-        HapticFeedback.mediumImpact();
         if (ref.read(activeTaskIdProvider) == task.id) {
           ref.read(activeTaskIdProvider.notifier).clear();
           ref.read(activeRunDurationProvider.notifier).set(null);

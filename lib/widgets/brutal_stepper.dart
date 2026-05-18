@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../theme/app_colors.dart';
@@ -31,10 +30,7 @@ class BrutalStepper extends StatelessWidget {
 
   void _bump(int delta) {
     final int next = (value + delta).clamp(min, max);
-    if (next != value) {
-      HapticFeedback.selectionClick();
-      onChanged(next);
-    }
+    if (next != value) onChanged(next);
   }
 
   @override

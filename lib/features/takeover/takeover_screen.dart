@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,10 +53,41 @@ class TakeoverScreen extends ConsumerStatefulWidget {
 }
 
 class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
+  Timer? _alarm;
+  int _alarmRings = 0;
+
   @override
   void initState() {
     super.initState();
     HapticFeedback.mediumImpact();
+    _startAlarm();
+  }
+
+  /// Beep on open, then every 1.5s for ~8 rings (~12s of audible nag)
+  /// before going quiet on its own. Resolving the takeover cuts it short.
+  void _startAlarm() {
+    SystemSound.play(SystemSoundType.alert);
+    _alarmRings = 1;
+    _alarm = Timer.periodic(const Duration(milliseconds: 1500), (Timer t) {
+      if (_alarmRings >= 8) {
+        t.cancel();
+        _alarm = null;
+        return;
+      }
+      SystemSound.play(SystemSoundType.alert);
+      _alarmRings++;
+    });
+  }
+
+  void _stopAlarm() {
+    _alarm?.cancel();
+    _alarm = null;
+  }
+
+  @override
+  void dispose() {
+    _stopAlarm();
+    super.dispose();
   }
 
   /// Always reads the freshest task from the provider so inline edits made
@@ -69,13 +102,12 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
   }
 
   void _resolve(TakeoverChoice choice) {
-    HapticFeedback.lightImpact();
+    _stopAlarm();
     widget.onChoice?.call(choice);
     Navigator.of(context).maybePop(choice);
   }
 
   Future<void> _editTitle() async {
-    HapticFeedback.selectionClick();
     final Task task = _currentTask();
     final String? next = await showModalBottomSheet<String>(
       context: context,
@@ -93,7 +125,6 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
   }
 
   Future<void> _editTime() async {
-    HapticFeedback.selectionClick();
     final Task task = _currentTask();
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -150,44 +181,53 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
     final String timeLabel = t.format(context);
 
     return Scaffold(
-      backgroundColor: AppColors.vaporBlue,
+      backgroundColor: AppColors.safetyOrange,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          'TASK INCOMING',
-                          style: AppText.title.copyWith(color: AppColors.white),
-                        ),
-                        const SizedBox(height: 8),
-                        _TimePill(label: timeLabel, onTap: _editTime),
-                      ],
-                    ),
+                  Icon(
+                    PhosphorIconsBold.bellRinging,
+                    color: AppColors.white,
+                    size: 18,
                   ),
-                  const SizedBox(width: 12),
-                  IconHero(
-                    icon: PhosphorIconsBold.bellRinging,
-                    background: AppColors.white,
-                    size: 64,
-                    animation: HeroAnim.wobble,
+                  const SizedBox(width: 8),
+                  Text(
+                    'TASK INCOMING',
+                    style: AppText.hero.copyWith(
+                      color: AppColors.white,
+                      fontSize: 22,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 84),
               Expanded(
-                child: _EditableTitleCard(title: task.title, onTap: _editTitle),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      const Center(child: _BellWithWaves()),
+                      const SizedBox(height: 18),
+                      Center(
+                        child: _TimePill(
+                          label: timeLabel,
+                          onTap: _editTime,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      _EditableTitleCard(
+                        title: task.title,
+                        onTap: _editTitle,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 84),
-              const SizedBox(height: 14),
               BrutalButton(
                 label: "I'M ON IT",
                 color: AppColors.toxicLime,
@@ -201,6 +241,83 @@ class _TakeoverScreenState extends ConsumerState<TakeoverScreen> {
                 onPressed: () => _resolve(TakeoverChoice.snooze),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Big bell with three concentric "sound wave" rings pulsing outward.
+/// The bell wobbles via [IconHero]; the rings expand + fade on a continuous
+/// loop, evenly phase-offset so one's always going.
+class _BellWithWaves extends StatefulWidget {
+  const _BellWithWaves();
+
+  @override
+  State<_BellWithWaves> createState() => _BellWithWavesState();
+}
+
+class _BellWithWavesState extends State<_BellWithWaves>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (BuildContext context, _) {
+        return SizedBox(
+          width: 220,
+          height: 220,
+          child: Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              for (int i = 0; i < 3; i++)
+                _Ring(phase: (_ctrl.value + i * 0.33) % 1.0),
+              IconHero(
+                icon: PhosphorIconsBold.bellRinging,
+                background: AppColors.white,
+                size: 130,
+                animation: HeroAnim.wobble,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Ring extends StatelessWidget {
+  const _Ring({required this.phase});
+  final double phase;
+
+  @override
+  Widget build(BuildContext context) {
+    final double scale = 0.55 + phase * 1.65;
+    final double alpha = (1 - phase).clamp(0.0, 1.0) * 0.55;
+    return IgnorePointer(
+      child: Transform.scale(
+        scale: scale,
+        child: Container(
+          width: 130,
+          height: 130,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.white.withValues(alpha: alpha),
+              width: 3,
+            ),
           ),
         ),
       ),
@@ -261,17 +378,12 @@ class _EditableTitleCard extends StatelessWidget {
           boxShadow: AppShadows.hard(offset: 6),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Expanded(
-              child: Scrollbar(
-                child: SingleChildScrollView(
-                  child: Text(
-                    title,
-                    style: AppText.hero.copyWith(fontSize: 28, height: 1.1),
-                  ),
-                ),
-              ),
+            Text(
+              title,
+              style: AppText.hero.copyWith(fontSize: 28, height: 1.1),
             ),
             const SizedBox(height: 8),
             Row(
