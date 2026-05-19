@@ -56,10 +56,6 @@ class GloryGalleryScreen extends ConsumerWidget {
               _ScoreStrip(count: stats.total),
               const SizedBox(height: 10),
               _StreakStrip(stats: stats),
-              // if (done.isNotEmpty) ...<Widget>[
-              //   const SizedBox(height: 10),
-              //   _WeeklyReplay(done: done, stats: stats),
-              // ],
               const SizedBox(height: 12),
               Expanded(
                 child: done.isEmpty
@@ -239,112 +235,6 @@ class _StatTile extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _WeeklyReplay extends StatelessWidget {
-  const _WeeklyReplay({required this.done, required this.stats});
-  final List<Task> done;
-  final CompletionStats stats;
-
-  String _overrunLabel() {
-    final double? avg = stats.avgOverrun;
-    if (avg == null) return 'GUESS GAME';
-    final int pct = ((avg - 1.0) * 100).round();
-    if (pct.abs() <= 5) return 'NAILS ESTIMATES';
-    if (pct > 0) return '+$pct% OVER';
-    return '$pct% UNDER';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final DateTime today = DateTime.now();
-    final List<int> perDay = List<int>.filled(7, 0);
-    for (final Task t in done) {
-      final DateTime when = t.completedAt ?? t.scheduledAt;
-      final int diff = today
-          .difference(DateTime(when.year, when.month, when.day))
-          .inDays;
-      if (diff >= 0 && diff < 7) {
-        perDay[6 - diff] += 1;
-      }
-    }
-    final int maxVal = perDay.fold<int>(0, (int p, int v) => v > p ? v : p);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        border: AppShadows.solid(width: AppShadows.borderRegular),
-        boxShadow: AppShadows.hard(offset: 4),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Text('THE WEEK', style: AppText.micro),
-              const Spacer(),
-              Text(
-                _overrunLabel(),
-                style: AppText.micro.copyWith(color: AppColors.electricPink),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 42,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                for (int i = 0; i < 7; i++) ...<Widget>[
-                  if (i > 0) const SizedBox(width: 4),
-                  Expanded(
-                    child: _ReplayBar(
-                      value: perDay[i],
-                      max: maxVal,
-                      isToday: i == 6,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ReplayBar extends StatelessWidget {
-  const _ReplayBar({
-    required this.value,
-    required this.max,
-    required this.isToday,
-  });
-  final int value;
-  final int max;
-  final bool isToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final double ratio = max == 0 ? 0 : value / max;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: <Widget>[
-        Expanded(
-          child: FractionallySizedBox(
-            heightFactor: ratio == 0 ? 0.04 : (0.15 + 0.85 * ratio),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isToday ? AppColors.electricPink : AppColors.toxicLime,
-                border: AppShadows.solid(width: 1.5),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

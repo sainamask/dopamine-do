@@ -53,8 +53,11 @@ class NotificationService {
       // Best-effort: fall back to whatever the package defaulted to.
     }
 
+    // Monochrome bell silhouette; Android tints it white in the status bar.
+    // Using the launcher icon directly produces a coloured square that
+    // Android either greys out or rejects on API 21+.
     const AndroidInitializationSettings android =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_notification');
     const DarwinInitializationSettings ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -135,6 +138,7 @@ class NotificationService {
         _channelId,
         _channelName,
         channelDescription: _channelDesc,
+        icon: 'ic_notification',
         importance: Importance.max,
         priority: Priority.max,
         category: AndroidNotificationCategory.alarm,

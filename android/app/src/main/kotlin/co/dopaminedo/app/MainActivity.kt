@@ -1,4 +1,4 @@
-package com.example.dopamine_do
+package co.dopaminedo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Block plaintext HTTP everywhere. The only network we make is the
+  lofi music stream, which is already HTTPS — explicitly disallowing
+  cleartext is good Play Store hygiene and helps the data-safety form.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
